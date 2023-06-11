@@ -11,10 +11,11 @@ const (
 )
 
 type url_info struct {
-	addr      string //地址
-	caiyunUrl string //caiyun url
-	weChatUrl string //wechat url
-	_switch   bool
+	name      string        //地址
+	caiyunUrl string        //caiyun url
+	weChatUrl string        //wechat url
+	_switch   chan struct{} //开关
+	isrun     bool          //是否运行
 }
 
 var msg = ":%s\r\n当前温度:%.1fC°,体感温度:%.1fC,紫外线:%s,体感:%s,空气质量:%s(%d),未来24小时天气:%s"
@@ -25,7 +26,6 @@ var delay = make(chan struct{}, 1)
 // 天气监控
 func watch_weather(info *url_info) {
 	//默认轮询监控,时间频率为60分钟
-
 	var (
 		rain_msg, weathereStatus string
 		_url                     = info.caiyunUrl
@@ -39,9 +39,13 @@ func watch_weather(info *url_info) {
 
 	for {
 		now = time.Now()
-		if !info._switch {
-			goto end
+		select {
+		case <-info._switch:
+			println("任务退出：", info.name)
+			return
+		default:
 		}
+		//并发控制
 		delay <- struct{}{}
 		now = time.Now()
 		//0点到6点 不发送
@@ -69,15 +73,15 @@ func watch_weather(info *url_info) {
 		//发送大于一小时才发生或天气发生变化
 		if now.Unix()-lastTime >= 3600 || tempStatus != weathereStatus {
 			//发送
-			Send(now.Format("15:04:05 ")+info.addr+
+			Send(now.Format("15:04:05 ")+info.name+
 				fmt.Sprintf(msg, weathereStatus, _realtime.Temperature, _realtime.ApparentTemperature,
 					_realtime.LifeIndex.Ultraviolet.Desc, _realtime.LifeIndex.Comfort.Desc, _realtime.AirQuality.Description.Chn,
 					_realtime.AirQuality.Aqi.Chn, res.Result.Hourly.Description), info.weChatUrl)
-			//记录这次发送时间
+
+			//记录这次发送时间和信息
 			lastTime = now.Unix()
 			tempStatus = weathereStatus
 		}
-		//更新状态
 		//防止并发请求
 		time.Sleep(time.Second)
 		<-delay
