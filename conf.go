@@ -5,6 +5,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"log"
+	"os"
 )
 
 type Config struct {
@@ -26,13 +27,18 @@ type Config struct {
 
 // 运行
 func run() {
-
 	var (
 		taskMap  = map[string]*url_info{} //任务控制
 		myConfig = Config{}
 		vip      = viper.New()
 		path     = "pkg/config.yaml"
 	)
+	// 使用 os.Stat 函数获取文件的信息
+	_, err := os.Stat(path)
+	// 检查文件是否存在
+	if os.IsNotExist(err) {
+		path = "config.yaml"
+	}
 	vip.SetConfigFile(path)
 	vip.SetConfigType("yaml")
 
