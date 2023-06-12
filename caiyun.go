@@ -45,14 +45,19 @@ func watch_weather(info *url_info) {
 			return
 		default:
 		}
-		//并发控制
-		delay <- struct{}{}
-		now = time.Now()
 		//0点到6点 不发送
 		if now.Hour() < 6 && now.Hour() > 0 {
 			goto end
 		}
+
+		//并发控制
+		delay <- struct{}{}
+		now = time.Now()
 		res, err = get_data(_url)
+		//防止并发请求
+		time.Sleep(time.Second)
+		<-delay
+
 		if err != nil {
 			Send(_url+":发生错误:"+err.Error(), info.weChatUrl)
 			goto end
@@ -82,9 +87,6 @@ func watch_weather(info *url_info) {
 			lastTime = now.Unix()
 			tempStatus = weathereStatus
 		}
-		//防止并发请求
-		time.Sleep(time.Second)
-		<-delay
 	end:
 		time.Sleep(time.Minute * 10)
 	}
