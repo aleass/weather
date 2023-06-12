@@ -46,7 +46,7 @@ func watch_weather(info *url_info) {
 		default:
 		}
 		//0点到6点 不发送
-		if now.Hour() < 6 && now.Hour() > 0 {
+		if now.Hour() <= 6 && now.Hour() >= 0 {
 			goto end
 		}
 
