@@ -28,6 +28,101 @@ var SkyconStatus = map[string]string{
 	"SAND":                "沙尘",   //AQI > 150, PM10> 150，湿度 < 30%，风速 > 6 m/s
 	"WIND":                "大风",
 }
+var windDirection = []string{
+	"北东北",
+	"东北",
+	"东东北",
+	"东",
+	"东东南",
+	"东南",
+	"南东南",
+	"南",
+	"南西南",
+	"西南",
+	"西西南",
+	"西",
+	"西西北",
+	"西北",
+	"北西北",
+	"北",
+}
+
+var windLevel = [221]*string{}
+var windLevelStr = [...]string{
+	"无风",
+	"1级微风徐徐",
+	"2级清风",
+	"3级树叶摇摆",
+	"4级树枝摇动",
+	"5级风力强劲",
+	"6级风力强劲",
+	"7级风力超强",
+	"8级狂风大作",
+	"9级狂风呼啸",
+	"10级暴风毁树",
+	"11级暴风毁树",
+	"12级飓风",
+	"13级台风",
+	"14级强台风",
+	"15级强台风",
+	"16级超强台风",
+	"17级超强台风",
+}
+
+func init() {
+	windLevel[1] = &windLevelStr[0]
+	for i := 1; i <= 5; i++ {
+		windLevel[i] = &windLevelStr[1]
+	}
+	for i := 6; i <= 11; i++ {
+		windLevel[i] = &windLevelStr[2]
+	}
+	for i := 12; i <= 19; i++ {
+		windLevel[i] = &windLevelStr[3]
+	}
+	for i := 20; i <= 28; i++ {
+		windLevel[i] = &windLevelStr[4]
+	}
+	for i := 29; i <= 38; i++ {
+		windLevel[i] = &windLevelStr[5]
+	}
+	for i := 39; i <= 49; i++ {
+		windLevel[i] = &windLevelStr[6]
+	}
+	for i := 50; i <= 61; i++ {
+		windLevel[i] = &windLevelStr[7]
+	}
+	for i := 62; i <= 74; i++ {
+		windLevel[i] = &windLevelStr[8]
+	}
+	for i := 75; i <= 88; i++ {
+		windLevel[i] = &windLevelStr[9]
+	}
+	for i := 89; i <= 102; i++ {
+		windLevel[i] = &windLevelStr[10]
+	}
+	for i := 103; i <= 117; i++ {
+		windLevel[i] = &windLevelStr[11]
+	}
+	for i := 118; i <= 133; i++ {
+		windLevel[i] = &windLevelStr[12]
+	}
+	for i := 134; i <= 149; i++ {
+		windLevel[i] = &windLevelStr[13]
+	}
+	for i := 150; i <= 166; i++ {
+		windLevel[i] = &windLevelStr[14]
+	}
+	for i := 167; i <= 183; i++ {
+		windLevel[i] = &windLevelStr[15]
+	}
+	for i := 184; i <= 201; i++ {
+		windLevel[i] = &windLevelStr[16]
+	}
+	for i := 202; i <= 220; i++ {
+		windLevel[i] = &windLevelStr[17]
+	}
+}
 
 //<0.031	<0.08	无雨／雪
 //0.031 ～ 0.25	0.08~3.44	小雨／雪
@@ -325,10 +420,10 @@ type realtime struct {
 	Skycon string `json:"skycon" desc:"天气现象"`
 	//Visibility  float64 `json:"visibility" desc:"地表水平能见度"`
 	//Dswrf       float64 `json:"dswrf" desc:"向下短波辐射通量(W/M2)"`
-	//		Wind struct {
-	//			Speed float64 `json:"speed" desc:"风速 米/秒"`
-	//			Direction float64 `json:"direction" desc:"风向"`
-	//		} `json:"wind" desc:"风速"`
+	Wind struct {
+		Speed     float64 `json:"speed" desc:"风速 米/秒"`
+		Direction float64 `json:"direction" desc:"风向"`
+	} `json:"wind" desc:"风速"`
 
 	//Pressure            float64 `json:"pressure" desc:"地面气压"`
 	ApparentTemperature float64 `json:"apparent_temperature" desc:"体感温度"`

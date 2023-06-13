@@ -18,7 +18,7 @@ type url_info struct {
 	isrun     bool          //是否运行
 }
 
-var msg = ":%s\r\n当前温度:%.1fC°,体感温度:%.1fC,紫外线:%s,体感:%s,空气质量:%s(%d),未来24小时天气:%s"
+var msg = " %s\n\n温度(体感):%.1f(%.1f)C°\n紫外线:%s\n体感:%s\n空气质量:%s(%d)\n湿度:%.1f%%\n风向:%s\n未来24小时天气:%s"
 
 // 减少一瞬间请求
 var delay = make(chan struct{}, 1)
@@ -35,6 +35,8 @@ func watch_weather(info *url_info) {
 		now                      time.Time
 		_realtime                realtime
 		tempStatus               string
+		windStr, wind            string
+		val                      float64
 	)
 
 	for {
@@ -64,10 +66,11 @@ func watch_weather(info *url_info) {
 		}
 		_realtime = res.Result.Realtime
 		//发生了变化,减少时间,监控异常
-		rain_msg = ","
+		rain_msg = "\n"
+		//	雨水
 		switch _realtime.Skycon {
 		case "LIGHT_RAIN", "MODERATE_RAIN", "HEAVY_RAIN", "STORM_RAIN":
-			rain_msg = fmt.Sprintf("(当前降水强度:%.1f毫米/小时,最近的降水带距离%.1f公里和降水强度%.1f毫米/小时),", _realtime.Precipitation.Local.Intensity,
+			rain_msg = fmt.Sprintf("\n降水强度:%.1f毫米/小时,最近的降水带距离%.1f公里和降水强度%.1f毫米/小时,", _realtime.Precipitation.Local.Intensity,
 				_realtime.Precipitation.Nearest.Distance, _realtime.Precipitation.Nearest.Intensity)
 		}
 		if index := strings.Index(res.Result.Minutely.Description, "还在加班么？注意休息哦"); index != -1 {
@@ -75,13 +78,23 @@ func watch_weather(info *url_info) {
 		} else {
 			weathereStatus = SkyconStatus[_realtime.Skycon] + rain_msg + res.Result.Minutely.Description
 		}
-		//发送大于一小时才发生或天气发生变化
-		if now.Unix()-lastTime >= 3600 || tempStatus != SkyconStatus[_realtime.Skycon] {
+
+		// 风向
+		val = (_realtime.Wind.Direction - 11.26) / 22.50
+		if val < 0 {
+			windStr = "北"
+		} else {
+			windStr = windDirection[int(val)]
+		}
+		wind = windStr + ",风力:" + *windLevel[int(_realtime.Wind.Speed)]
+
+		//发送大于6小时才发生或天气发生变化
+		if now.Unix()-lastTime >= 6*3600 || tempStatus != SkyconStatus[_realtime.Skycon] {
 			//发送
 			Send(now.Format("15:04:05 ")+info.name+
 				fmt.Sprintf(msg, weathereStatus, _realtime.Temperature, _realtime.ApparentTemperature,
 					_realtime.LifeIndex.Ultraviolet.Desc, _realtime.LifeIndex.Comfort.Desc, _realtime.AirQuality.Description.Chn,
-					_realtime.AirQuality.Aqi.Chn, res.Result.Hourly.Description), info.weChatUrl)
+					_realtime.AirQuality.Aqi.Chn, _realtime.Humidity*100, wind, res.Result.Hourly.Description), info.weChatUrl)
 
 			//记录这次发送时间和信息
 			lastTime = now.Unix()
@@ -90,4 +103,8 @@ func watch_weather(info *url_info) {
 	end:
 		time.Sleep(time.Minute * 5)
 	}
+}
+
+func getWind() {
+
 }
