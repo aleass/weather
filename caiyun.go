@@ -76,7 +76,7 @@ func watch_weather(info *url_info) {
 			weathereStatus = SkyconStatus[_realtime.Skycon] + rain_msg + res.Result.Minutely.Description
 		}
 		//发送大于一小时才发生或天气发生变化
-		if now.Unix()-lastTime >= 3600 || tempStatus != weathereStatus {
+		if now.Unix()-lastTime >= 3600 || tempStatus != SkyconStatus[_realtime.Skycon] {
 			//发送
 			Send(now.Format("15:04:05 ")+info.name+
 				fmt.Sprintf(msg, weathereStatus, _realtime.Temperature, _realtime.ApparentTemperature,
@@ -85,9 +85,9 @@ func watch_weather(info *url_info) {
 
 			//记录这次发送时间和信息
 			lastTime = now.Unix()
-			tempStatus = weathereStatus
+			tempStatus = SkyconStatus[_realtime.Skycon]
 		}
 	end:
-		time.Sleep(time.Minute * 10)
+		time.Sleep(time.Minute * 5)
 	}
 }
