@@ -10,7 +10,7 @@ import (
 const (
 	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
 	wechatUrl = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
-	msg       = "%s\n●温度:%.1fC° 体感:%s(%.1fC°)\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s\n●未来24小时天气:%s"
+	msg       = " %s\n●温度:%.1fC° 体感:%s(%.1fC°)\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s\n●未来24小时天气:%s"
 )
 
 type urlInfo struct {
@@ -106,7 +106,7 @@ func (info *urlInfo) watchWeather() {
 
 // 雨水
 func (info *urlInfo) getRainData(res *Weather, _realtime *Realtime) string {
-	rainMsg := "\n"
+	rainMsg := "\n●"
 	var weatherMsg string
 	//	雨水
 	switch _realtime.Skycon {
