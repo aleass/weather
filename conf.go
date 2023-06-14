@@ -90,7 +90,7 @@ func run() {
 				info.isRun = false
 			} else if v.Switch && !info.isRun {
 				info.isRun = true
-				go watchWeather(info) //生成一个监控任务
+				go info.watchWeather() //生成一个监控任务
 			}
 		}
 		common.ErrorUrl = wechatUrl + notes["error"]

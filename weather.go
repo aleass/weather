@@ -30,23 +30,28 @@ var SkyconStatus = map[string]string{
 }
 
 // 方向
-var windDirection = []string{
-	"北东北",
+var windDirection = [...]string{
+	"", //北东北 22.5
 	"东北",
-	"东东北",
+	"", //东东北 67.5
 	"东",
-	"东东南",
+	"", //东东南 112.5
 	"东南",
-	"南东南",
+	"", //南东南 157.5
 	"南",
-	"南西南",
+	"", //南西南 202.5
 	"西南",
-	"西西南",
+	"", //西西南 247.5
 	"西",
-	"西西北",
+	"", //西西北 292.5
 	"西北",
-	"北西北",
+	"", //北西北 337.5
 	"北",
+}
+
+// 转移不常见风向
+var UnusualWind = [15]float64{
+	0: 22.5, 2: 67.5, 4: 112.5, 6: 157.5, 8: 202.5, 10: 247.5, 12: 292.5, 14: 337.5,
 }
 
 var windLevel = [221]*[2]string{}
@@ -202,7 +207,7 @@ type Weather struct {
 			} `json:"adcodes" desc:""`
 		} `json:"alert" desc:"地址"`
 		//
-		Realtime realtime `json:"realtime" desc:"实时级别预报"`
+		Realtime Realtime `json:"realtime" desc:"实时级别预报"`
 		Minutely struct {
 			//Status          string    `json:"status" desc:""`
 			//Datasource string `json:"datasource" desc:"数据源"`
@@ -462,7 +467,7 @@ type Weather struct {
 		ForecastKeypoint string `json:"forecast_keypoint" desc:"自然语言描述当前情况"`
 	} `json:"result" desc:""`
 }
-type realtime struct {
+type Realtime struct {
 	//Status  string        `json:"status" desc:""`
 	Temperature float64 `json:"temperature"  desc:"温度"`
 	Humidity    float64 `json:"humidity" desc:"地表 2 米湿度相对湿度(%)"`
