@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 	"weather/common"
@@ -98,6 +99,7 @@ func (info *urlInfo) watchWeather() {
 			lastTime = now.Unix()
 			_weatherMsg = SkyconStatus[realtime.Skycon]
 			_alertMsg = alertMsg
+			alertMsg = ""
 		}
 	end:
 		time.Sleep(time.Minute * info.watchTime)
@@ -142,7 +144,7 @@ func (info *urlInfo) getWindData(_realtime *Realtime) string {
 	}
 
 	_windLevel := (*windLevel[int(_realtime.Wind.Speed)])
-	windStr = fmt.Sprintf("%s%s风%s", _windLevel[0], windStr, _windLevel[1])
+	windStr = fmt.Sprintf("%s风 %s", windStr, _windLevel)
 	return windStr
 }
 
@@ -150,6 +152,11 @@ func (info *urlInfo) getWindData(_realtime *Realtime) string {
 func (info *urlInfo) getAlterData(res *Weather) string {
 	info.msg.Reset()
 	info.msg.WriteString("\n\n------------预警------------")
+
+	sort.Slice(res.Result.Alert.Content, func(i, j int) bool {
+		return res.Result.Alert.Content[i].Pubtimestamp < res.Result.Alert.Content[j].Pubtimestamp
+	})
+
 	for i, content := range res.Result.Alert.Content {
 		if content.RequestStatus != "ok" {
 			continue
