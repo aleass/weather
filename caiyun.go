@@ -4,39 +4,48 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"weather/common"
 )
 
 const (
-	caiyunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
+	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
 )
 
-type url_info struct {
-	name      string        //地址
-	caiyunUrl string        //caiyun url
-	weChatUrl string        //wechat url
-	_switch   chan struct{} //开关
-	isrun     bool          //是否运行
+type urlInfo struct {
+	name      string        `desc:"地址"`
+	caiyunUrl string        `desc:"caiyun url"`
+	weChatUrl string        `desc:"wechat url"`
+	_switch   chan struct{} `desc:"开关"`
+	isrun     bool          `desc:"是否运行"`
+	watchTime time.Duration `desc:"监控时间:分钟"` //
 }
 
-var msg = " %s\n\n温度(体感):%.1f(%.1f)C°\n紫外线:%s\n体感:%s\n空气质量:%s(%d)\n湿度:%.1f%%\n风向:%s\n未来24小时天气:%s"
+var msg = " %s\n\n温度(体感):%.1f(%.1f)C°\n紫外线:%s\n体感:%s\n空气质量:%s(%d)\n湿度:%.1f%%\n%s\n未来24小时天气:%s"
 
 // 减少一瞬间请求
 var delay = make(chan struct{}, 1)
 
 // 天气监控
-func watch_weather(info *url_info) {
+func watchWeather(info *urlInfo) {
+	defer func() {
+		if err := recover(); err != nil {
+			common.Logger.Panic(fmt.Sprintf("panic err:%v", err))
+			info.isrun = false
+		}
+	}()
 	//默认轮询监控,时间频率为60分钟
 	var (
-		rain_msg, weathereStatus string
-		_url                     = info.caiyunUrl
-		res                      *Weather
-		err                      error
-		lastTime                 int64
-		now                      time.Time
-		_realtime                realtime
-		tempStatus               string
-		windStr, wind            string
-		val                      float64
+		rainMsg, weatherMsg string
+		_url                = info.caiyunUrl
+		res                 *Weather
+		err                 error
+		lastTime            int64
+		now                 time.Time
+		_realtime           realtime
+		tempStatus          string
+		_windLevel          [2]string
+		windStr, wind       string
+		val                 float64
 	)
 
 	for {
@@ -55,28 +64,34 @@ func watch_weather(info *url_info) {
 		//并发控制
 		delay <- struct{}{}
 		now = time.Now()
-		res, err = get_data(_url)
+		res, err = getWeatherRawData(_url)
+		if err != nil {
+			Send(_url+":发生错误:"+err.Error(), info.weChatUrl)
+			common.Logger.Error(err.Error())
+			goto end
+		}
 		//防止并发请求
 		time.Sleep(time.Second)
 		<-delay
 
 		if err != nil {
 			Send(_url+":发生错误:"+err.Error(), info.weChatUrl)
+			common.Logger.Error(err.Error())
 			goto end
 		}
 		_realtime = res.Result.Realtime
 		//发生了变化,减少时间,监控异常
-		rain_msg = "\n"
+		rainMsg = "\n"
 		//	雨水
 		switch _realtime.Skycon {
 		case "LIGHT_RAIN", "MODERATE_RAIN", "HEAVY_RAIN", "STORM_RAIN":
-			rain_msg = fmt.Sprintf("\n降水强度:%.1f毫米/小时,最近的降水带距离%.1f公里和降水强度%.1f毫米/小时,", _realtime.Precipitation.Local.Intensity,
+			rainMsg = fmt.Sprintf("\n降水强度:%.1f毫米/小时,最近的降水带距离%.1f公里和降水强度%.1f毫米/小时,", _realtime.Precipitation.Local.Intensity,
 				_realtime.Precipitation.Nearest.Distance, _realtime.Precipitation.Nearest.Intensity)
 		}
 		if index := strings.Index(res.Result.Minutely.Description, "还在加班么？注意休息哦"); index != -1 {
-			weathereStatus = SkyconStatus[_realtime.Skycon] + rain_msg + res.Result.Minutely.Description[:index]
+			weatherMsg = SkyconStatus[_realtime.Skycon] + rainMsg + res.Result.Minutely.Description[:index]
 		} else {
-			weathereStatus = SkyconStatus[_realtime.Skycon] + rain_msg + res.Result.Minutely.Description
+			weatherMsg = SkyconStatus[_realtime.Skycon] + rainMsg + res.Result.Minutely.Description
 		}
 
 		// 风向
@@ -86,13 +101,14 @@ func watch_weather(info *url_info) {
 		} else {
 			windStr = windDirection[int(val)]
 		}
-		wind = windStr + ",风力:" + *windLevel[int(_realtime.Wind.Speed)]
+		_windLevel = (*windLevel[int(_realtime.Wind.Speed)])
+		wind = fmt.Sprintf("%s%s风%s", _windLevel[0], windStr, _windLevel[1])
 
 		//发送大于6小时才发生或天气发生变化
 		if now.Unix()-lastTime >= 6*3600 || tempStatus != SkyconStatus[_realtime.Skycon] {
 			//发送
 			Send(now.Format("15:04:05 ")+info.name+
-				fmt.Sprintf(msg, weathereStatus, _realtime.Temperature, _realtime.ApparentTemperature,
+				fmt.Sprintf(msg, weatherMsg, _realtime.Temperature, _realtime.ApparentTemperature,
 					_realtime.LifeIndex.Ultraviolet.Desc, _realtime.LifeIndex.Comfort.Desc, _realtime.AirQuality.Description.Chn,
 					_realtime.AirQuality.Aqi.Chn, _realtime.Humidity*100, wind, res.Result.Hourly.Description), info.weChatUrl)
 
@@ -101,10 +117,6 @@ func watch_weather(info *url_info) {
 			tempStatus = SkyconStatus[_realtime.Skycon]
 		}
 	end:
-		time.Sleep(time.Minute * 5)
+		time.Sleep(time.Minute * info.watchTime)
 	}
-}
-
-func getWind() {
-
 }

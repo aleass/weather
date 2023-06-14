@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
-	"log"
 	"os"
+	"weather/common"
 )
 
 type Config struct {
@@ -28,7 +28,7 @@ type Config struct {
 // 运行
 func run() {
 	var (
-		taskMap  = map[string]*url_info{} //任务控制
+		taskMap  = map[string]*urlInfo{} //任务控制
 		myConfig = Config{}
 		vip      = viper.New()
 		path     = "pkg/config.yaml"
@@ -45,13 +45,14 @@ func run() {
 	//创建一个监控对象
 	watch, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		common.Logger.Error("err:" + err.Error())
 	}
 	//添加要监控的对象，文件或文件夹
-	err = watch.Add(path)
-	if err != nil {
-		log.Fatal(err)
+
+	if err = watch.Add(path); err != nil {
+		common.Logger.Error("err:" + err.Error())
 	}
+	defer watch.Close()
 	for {
 		if err = vip.ReadInConfig(); err != nil {
 			panic(fmt.Errorf("无法读取配置文件: %w", err))
@@ -74,11 +75,12 @@ func run() {
 			info, ok := taskMap[v.Name]
 			if !ok {
 				//生成一个任务
-				task := &url_info{
+				task := &urlInfo{
 					name:      v.Name,
-					caiyunUrl: fmt.Sprintf(caiyunUrl, myConfig.CaiYun.Token, v.Coordinate),
+					caiyunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
 					weChatUrl: notes[v.WechatNotes],
 					_switch:   make(chan struct{}),
+					watchTime: 5, //默认10分钟
 				}
 				taskMap[v.Name] = task
 				info = task
@@ -88,10 +90,9 @@ func run() {
 				info.isrun = false
 			} else if v.Switch && !info.isrun {
 				info.isrun = true
-				go watch_weather(info) //生成一个监控任务
+				go watchWeather(info) //生成一个监控任务
 			}
 		}
 		<-watch.Events //文件监控
 	}
-	watch.Close()
 }
