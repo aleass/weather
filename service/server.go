@@ -25,13 +25,16 @@ type UrlInfo struct {
 	msg       strings.Builder
 }
 
+var myConfig = common.Config{}
+var notes = make(map[string]string, len(myConfig.Wechat))
+
 // 运行
 func Run() {
 	var (
-		taskMap  = map[string]*UrlInfo{} //任务控制
-		myConfig = common.Config{}
-		vip      = viper.New()
-		path     = "pkg/config.yaml"
+		taskMap = map[string]*UrlInfo{} //任务控制
+
+		vip  = viper.New()
+		path = "pkg/config.yaml"
 	)
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
@@ -66,7 +69,6 @@ func Run() {
 			panic("token，任务，发送url为空")
 		}
 
-		var notes = make(map[string]string, len(myConfig.Wechat))
 		for _, v := range myConfig.Wechat {
 			notes[v.Notes] = v.Token
 		}
