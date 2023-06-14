@@ -123,10 +123,8 @@ func LogSend(err string, errType ErrorType) {
 	switch errType {
 	case InfoErrorType:
 		logger.Info(err)
-	case ErrType:
+	case ErrType, PanicType:
 		logger.Error(err)
-	case PanicType:
-		logger.Panic(err)
 	}
 	Send(err, ErrorUrl)
 }

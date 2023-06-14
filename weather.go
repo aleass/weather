@@ -28,6 +28,8 @@ var SkyconStatus = map[string]string{
 	"SAND":                "沙尘",   //AQI > 150, PM10> 150，湿度 < 30%，风速 > 6 m/s
 	"WIND":                "大风",
 }
+
+// 方向
 var windDirection = []string{
 	"北东北",
 	"东北",
@@ -48,6 +50,8 @@ var windDirection = []string{
 }
 
 var windLevel = [221]*[2]string{}
+
+// 风力描述
 var windLevelStr = [...][2]string{
 	{"无风", ""},
 	{"1级", "(微风徐徐)"},
@@ -70,7 +74,7 @@ var windLevelStr = [...][2]string{
 }
 
 func init() {
-	windLevel[1] = &windLevelStr[0]
+	windLevel[0] = &windLevelStr[0]
 	for i := 1; i <= 5; i++ {
 		windLevel[i] = &windLevelStr[1]
 	}
@@ -129,9 +133,39 @@ func init() {
 //0.25 ～ 0.35	3.44~11.33	中雨／雪
 //0.35 ～ 0.48	11.33~51.30	大雨／雪
 //>=0.48	>=51.30	暴雨／雪
+/*
+ "content": [
+	{
+		"province": "广东省",
+		"status": "预警中",
+		"code": "1602",
+		"description": "广州市气象台14日06时18分发布暴雨黄色和雷雨大风黄色预警信号:受佛山方向移近的雷雨云团影响，预计未来1~3小时广州市越秀区、天河区降水明显，累积雨量30~50毫米，并伴有6级左右短时大风和雷电。从14日06时18分起，广州市越秀区、天河区暴雨和雷雨大风黄色预警信号生效，正值上班上学高峰期，请注意做好防御工作。广州市气象台06月14日06时18分发布。",
+		"regionId": "",
+		"county": "广州市",
+		"pubtimestamp": 1686694680,
+		"latlon": [
+			23.130061,
+			113.264499
+		],
+		"city": "广东省",
+		"alertId": "44010041600000_20230614062133",
+		"title": "广州市气象台发布雷雨大风黄色预警[III级/较重]",
+		"adcode": "440100",
+		"source": "国家预警信息发布中心",
+		"location": "广东省广州市",
+		"request_status": "ok"
+	}
+],
 
-//中国AQI国标将空气质量分为六个等级：
 
+
+标题:广州市气象台发布雷雨大风黄色预警[III级/较重]:
+内容:广州市气象台14日06时18分发布暴雨黄色和雷雨大风黄色预警信号:受佛山方向移近的雷雨云团影响，预计未来1~3小时广州市越秀区、天河区降水明显，累积雨量30~50毫米，并伴有6级左右短时大风和雷电。从14日06时18分起，广州市越秀区、天河区暴雨和雷雨大风黄色预警信号生效，正值上班上学高峰期，请注意做好防御工作。广州市气象台06月14日06时18分发布。
+状态:预警中
+来源:国家预警信息发布中心
+
+
+*/
 type Weather struct {
 	Status     string    `json:"status" desc:""`
 	ApiVersion string    `json:"api_version" desc:""`
@@ -144,8 +178,24 @@ type Weather struct {
 	Location   []float64 `json:"location" desc:""`
 	Result     struct {
 		Alert struct {
-			Status  string        `json:"status" desc:""`
-			Content []interface{} `json:"content" desc:""`
+			Status  string `json:"status" desc:""`
+			Content []struct {
+				//Province     string `json:"province" desc:"省份"`
+				Status string `json:"status" desc:"状态"`
+				//Code         string `json:"code" desc:""`
+				Description string `json:"description" desc:"详情"`
+				//RegionId     string `json:"regionId" desc:""`
+				//County       string `json:"county" desc:"县"`
+				Pubtimestamp int64 `json:"pubtimestamp" desc:"发布时间"`
+				//Latlon       []float64 `json:"latlon" desc:"经纬度"`
+				//City         string    `json:"city" desc:"城市"`
+				//AlertId       string    `json:"alertId" desc:"预警id"`
+				Title string `json:"title" desc:"标题"`
+				//Adcode        string    `json:"adcode" desc:"代码"`
+				Source        string `json:"source" desc:"来源"`
+				Location      string `json:"location" desc:"地区"`
+				RequestStatus string `json:"request_status" desc:"ok"`
+			} `json:"content" desc:""`
 			Adcodes []struct {
 				Adcode int    `json:"adcode" desc:""`
 				Name   string `json:"name" desc:"地点"` //上海 desc:""市
