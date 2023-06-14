@@ -11,7 +11,7 @@ import (
 type Config struct {
 	// 结构映射
 	Wechat []struct {
-		Urls  string `mapstructure:"url"`
+		Token string `mapstructure:"token"`
 		Notes string `mapstructure:"note"`
 	} `mapstructure:"wechat"`
 	CaiYun struct {
@@ -45,12 +45,12 @@ func run() {
 	//创建一个监控对象
 	watch, err := fsnotify.NewWatcher()
 	if err != nil {
-		common.Logger.Error("err:" + err.Error())
+		common.LogSend("error:"+err.Error(), common.ErrType)
 	}
 	//添加要监控的对象，文件或文件夹
 
 	if err = watch.Add(path); err != nil {
-		common.Logger.Error("err:" + err.Error())
+		common.LogSend("error:"+err.Error(), common.ErrType)
 	}
 	defer watch.Close()
 	for {
@@ -68,7 +68,7 @@ func run() {
 
 		var notes = make(map[string]string, len(myConfig.Wechat))
 		for _, v := range myConfig.Wechat {
-			notes[v.Notes] = v.Urls
+			notes[v.Notes] = v.Token
 		}
 
 		for _, v := range myConfig.CaiYun.Addres {
@@ -77,22 +77,23 @@ func run() {
 				//生成一个任务
 				task := &urlInfo{
 					name:      v.Name,
-					caiyunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
-					weChatUrl: notes[v.WechatNotes],
+					caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
+					weChatUrl: wechatUrl + notes[v.WechatNotes],
 					_switch:   make(chan struct{}),
 					watchTime: 5, //默认10分钟
 				}
 				taskMap[v.Name] = task
 				info = task
 			}
-			if !v.Switch && info.isrun {
+			if !v.Switch && info.isRun {
 				info._switch <- struct{}{} //关闭一个任务
-				info.isrun = false
-			} else if v.Switch && !info.isrun {
-				info.isrun = true
+				info.isRun = false
+			} else if v.Switch && !info.isRun {
+				info.isRun = true
 				go watchWeather(info) //生成一个监控任务
 			}
 		}
+		common.ErrorUrl = wechatUrl + notes["error"]
 		<-watch.Events //文件监控
 	}
 }

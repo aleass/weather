@@ -3,7 +3,7 @@
 
 # 配置文件：yaml
 wechat:
-  - url: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxxxx
+  - token: wechat token
     > wechat的url
   - note: xxxx
     > wechat的url的备注

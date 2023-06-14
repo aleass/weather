@@ -9,7 +9,18 @@ import (
 	"unsafe"
 )
 
-var Logger *zap.Logger
+type ErrorType string
+
+var (
+	InfoErrorType ErrorType = "info"
+	ErrType       ErrorType = "err"
+	PanicType     ErrorType = "panic"
+)
+
+var (
+	logger   *zap.Logger
+	ErrorUrl string
+)
 
 // @ name 日志名字
 func init() {
@@ -102,9 +113,20 @@ func logInit(name string) {
 
 	caller := zap.AddCaller()
 	development := zap.Development()
-	logger := zap.New(core, caller, development, zap.AddStacktrace(zapcore.DPanicLevel))
+	logger = zap.New(core, caller, development, zap.AddStacktrace(zapcore.DPanicLevel))
 	//logger.development设置为FALSE时，DPanic就不会panic
 	//go.uber.org/zap/logger.go:279
 	*(*bool)(unsafe.Pointer(uintptr(unsafe.Pointer(logger)) + uintptr(16))) = false
-	Logger = logger
+}
+
+func LogSend(err string, errType ErrorType) {
+	switch errType {
+	case InfoErrorType:
+		logger.Info(err)
+	case ErrType:
+		logger.Error(err)
+	case PanicType:
+		logger.Panic(err)
+	}
+	Send(err, ErrorUrl)
 }

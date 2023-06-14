@@ -9,14 +9,15 @@ import (
 
 const (
 	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
+	wechatUrl = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
 )
 
 type urlInfo struct {
 	name      string        `desc:"地址"`
-	caiyunUrl string        `desc:"caiyun url"`
+	caiYunUrl string        `desc:"caiyun url"`
 	weChatUrl string        `desc:"wechat url"`
 	_switch   chan struct{} `desc:"开关"`
-	isrun     bool          `desc:"是否运行"`
+	isRun     bool          `desc:"是否运行"`
 	watchTime time.Duration `desc:"监控时间:分钟"` //
 }
 
@@ -29,14 +30,14 @@ var delay = make(chan struct{}, 1)
 func watchWeather(info *urlInfo) {
 	defer func() {
 		if err := recover(); err != nil {
-			common.Logger.Panic(fmt.Sprintf("panic err:%v", err))
-			info.isrun = false
+			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
+			info.isRun = false
 		}
 	}()
 	//默认轮询监控,时间频率为60分钟
 	var (
 		rainMsg, weatherMsg string
-		_url                = info.caiyunUrl
+		_url                = info.caiYunUrl
 		res                 *Weather
 		err                 error
 		lastTime            int64
@@ -66,8 +67,7 @@ func watchWeather(info *urlInfo) {
 		now = time.Now()
 		res, err = getWeatherRawData(_url)
 		if err != nil {
-			Send(_url+":发生错误:"+err.Error(), info.weChatUrl)
-			common.Logger.Error(err.Error())
+			common.LogSend(_url+":发生错误:"+err.Error(), common.ErrType)
 			goto end
 		}
 		//防止并发请求
@@ -75,8 +75,7 @@ func watchWeather(info *urlInfo) {
 		<-delay
 
 		if err != nil {
-			Send(_url+":发生错误:"+err.Error(), info.weChatUrl)
-			common.Logger.Error(err.Error())
+			common.LogSend(_url+":发生错误:"+err.Error(), common.ErrType)
 			goto end
 		}
 		_realtime = res.Result.Realtime
@@ -107,7 +106,7 @@ func watchWeather(info *urlInfo) {
 		//发送大于6小时才发生或天气发生变化
 		if now.Unix()-lastTime >= 6*3600 || tempStatus != SkyconStatus[_realtime.Skycon] {
 			//发送
-			Send(now.Format("15:04:05 ")+info.name+
+			common.Send(now.Format("15:04:05 ")+info.name+
 				fmt.Sprintf(msg, weatherMsg, _realtime.Temperature, _realtime.ApparentTemperature,
 					_realtime.LifeIndex.Ultraviolet.Desc, _realtime.LifeIndex.Comfort.Desc, _realtime.AirQuality.Description.Chn,
 					_realtime.AirQuality.Aqi.Chn, _realtime.Humidity*100, wind, res.Result.Hourly.Description), info.weChatUrl)
