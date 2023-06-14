@@ -63,7 +63,7 @@ func logInit(name string) {
 		LineEnding:    zapcore.DefaultLineEnding,
 		EncodeLevel:   zapcore.LowercaseLevelEncoder, // 小写编码器
 		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-			enc.AppendString(t.Format(Usualdate))
+			enc.AppendString(t.Format(UsualDate))
 		},
 		EncodeDuration: zapcore.SecondsDurationEncoder, //
 		EncodeCaller:   zapcore.FullCallerEncoder,      // 全路径编码器

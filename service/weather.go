@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ var SkyconStatus = map[string]string{
 }
 
 // 方向
-var windDirection = [...]string{
+var WindDirection = [...]string{
 	"", //北东北 22.5
 	"东北",
 	"", //东东北 67.5
@@ -54,10 +54,10 @@ var UnusualWind = [15]float64{
 	0: 22.5, 2: 67.5, 4: 112.5, 6: 157.5, 8: 202.5, 10: 247.5, 12: 292.5, 14: 337.5,
 }
 
-var windLevel = [221]*string{}
+var WindLevel = [221]*string{}
 
 // 风力描述
-var windLevelStr = [...]string{
+var WindLevelStr = [...]string{
 	"无风",
 	"1级(微风徐徐)",
 	"2级(清风)",
@@ -79,57 +79,57 @@ var windLevelStr = [...]string{
 }
 
 func init() {
-	windLevel[0] = &windLevelStr[0]
+	WindLevel[0] = &WindLevelStr[0]
 	for i := 1; i <= 5; i++ {
-		windLevel[i] = &windLevelStr[1]
+		WindLevel[i] = &WindLevelStr[1]
 	}
 	for i := 6; i <= 11; i++ {
-		windLevel[i] = &windLevelStr[2]
+		WindLevel[i] = &WindLevelStr[2]
 	}
 	for i := 12; i <= 19; i++ {
-		windLevel[i] = &windLevelStr[3]
+		WindLevel[i] = &WindLevelStr[3]
 	}
 	for i := 20; i <= 28; i++ {
-		windLevel[i] = &windLevelStr[4]
+		WindLevel[i] = &WindLevelStr[4]
 	}
 	for i := 29; i <= 38; i++ {
-		windLevel[i] = &windLevelStr[5]
+		WindLevel[i] = &WindLevelStr[5]
 	}
 	for i := 39; i <= 49; i++ {
-		windLevel[i] = &windLevelStr[6]
+		WindLevel[i] = &WindLevelStr[6]
 	}
 	for i := 50; i <= 61; i++ {
-		windLevel[i] = &windLevelStr[7]
+		WindLevel[i] = &WindLevelStr[7]
 	}
 	for i := 62; i <= 74; i++ {
-		windLevel[i] = &windLevelStr[8]
+		WindLevel[i] = &WindLevelStr[8]
 	}
 	for i := 75; i <= 88; i++ {
-		windLevel[i] = &windLevelStr[9]
+		WindLevel[i] = &WindLevelStr[9]
 	}
 	for i := 89; i <= 102; i++ {
-		windLevel[i] = &windLevelStr[10]
+		WindLevel[i] = &WindLevelStr[10]
 	}
 	for i := 103; i <= 117; i++ {
-		windLevel[i] = &windLevelStr[11]
+		WindLevel[i] = &WindLevelStr[11]
 	}
 	for i := 118; i <= 133; i++ {
-		windLevel[i] = &windLevelStr[12]
+		WindLevel[i] = &WindLevelStr[12]
 	}
 	for i := 134; i <= 149; i++ {
-		windLevel[i] = &windLevelStr[13]
+		WindLevel[i] = &WindLevelStr[13]
 	}
 	for i := 150; i <= 166; i++ {
-		windLevel[i] = &windLevelStr[14]
+		WindLevel[i] = &WindLevelStr[14]
 	}
 	for i := 167; i <= 183; i++ {
-		windLevel[i] = &windLevelStr[15]
+		WindLevel[i] = &WindLevelStr[15]
 	}
 	for i := 184; i <= 201; i++ {
-		windLevel[i] = &windLevelStr[16]
+		WindLevel[i] = &WindLevelStr[16]
 	}
 	for i := 202; i <= 220; i++ {
-		windLevel[i] = &windLevelStr[17]
+		WindLevel[i] = &WindLevelStr[17]
 	}
 }
 
@@ -523,7 +523,7 @@ type Realtime struct {
 }
 
 // 获取数据
-func getWeatherRawData(url string) (*Weather, error) {
+func GetWeatherRawData(url string) (*Weather, error) {
 	response, err := http.Get(url)
 	if err != nil {
 		return nil, err

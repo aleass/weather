@@ -1,35 +1,35 @@
-package main
+package service
 
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"os"
+	"strings"
+	"time"
 	"weather/common"
 )
 
-type Config struct {
-	// 结构映射
-	Wechat []struct {
-		Token string `mapstructure:"token"`
-		Notes string `mapstructure:"note"`
-	} `mapstructure:"wechat"`
-	CaiYun struct {
-		Token  string `json:"token"`
-		Addres []struct {
-			Name        string `json:"name"`
-			WechatNotes string `json:"wechatNotes"`
-			Coordinate  string `json:"coordinate"`
-			Switch      bool   `json:"switch" desc:"开关"`
-		} `json:"addres"`
-	} `json:"caiyun"`
+const (
+	wechatUrl = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
+	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
+)
+
+type UrlInfo struct {
+	name      string        `desc:"地址"`
+	caiYunUrl string        `desc:"caiyun url"`
+	weChatUrl string        `desc:"wechat url"`
+	_switch   chan struct{} `desc:"开关"`
+	isRun     bool          `desc:"是否运行"`
+	watchTime time.Duration `desc:"监控时间:分钟"`
+	msg       strings.Builder
 }
 
 // 运行
-func run() {
+func Run() {
 	var (
-		taskMap  = map[string]*urlInfo{} //任务控制
-		myConfig = Config{}
+		taskMap  = map[string]*UrlInfo{} //任务控制
+		myConfig = common.Config{}
 		vip      = viper.New()
 		path     = "pkg/config.yaml"
 	)
@@ -75,7 +75,7 @@ func run() {
 			info, ok := taskMap[v.Name]
 			if !ok {
 				//生成一个任务
-				task := &urlInfo{
+				task := &UrlInfo{
 					name:      v.Name,
 					caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
 					weChatUrl: wechatUrl + notes[v.WechatNotes],
@@ -90,7 +90,7 @@ func run() {
 				info.isRun = false
 			} else if v.Switch && !info.isRun {
 				info.isRun = true
-				go info.watchWeather() //生成一个监控任务
+				go info.WatchWeather() //生成一个监控任务
 			}
 		}
 		common.ErrorUrl = wechatUrl + notes["error"]

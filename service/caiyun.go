@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"fmt"
@@ -9,26 +9,14 @@ import (
 )
 
 const (
-	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
-	wechatUrl = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
-	msg       = " %s\n●温度:%.1fC° 体感:%s(%.1fC°)\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s\n●未来24小时天气:%s"
+	msg = " %s\n●温度:%.1fC° 体感:%s(%.1fC°)\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s\n●未来24小时天气:%s"
 )
-
-type urlInfo struct {
-	name      string        `desc:"地址"`
-	caiYunUrl string        `desc:"caiyun url"`
-	weChatUrl string        `desc:"wechat url"`
-	_switch   chan struct{} `desc:"开关"`
-	isRun     bool          `desc:"是否运行"`
-	watchTime time.Duration `desc:"监控时间:分钟"`
-	msg       strings.Builder
-}
 
 // 减少一瞬间请求
 var delay = make(chan struct{}, 1)
 
 // 天气监控
-func (info *urlInfo) watchWeather() {
+func (info *UrlInfo) WatchWeather() {
 	defer func() {
 		if err := recover(); err != nil {
 			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
@@ -60,8 +48,7 @@ func (info *urlInfo) watchWeather() {
 
 		//并发控制
 		delay <- struct{}{}
-		now = time.Now()
-		res, err = getWeatherRawData(info.caiYunUrl)
+		res, err = GetWeatherRawData(info.caiYunUrl)
 		if err != nil {
 			common.LogSend(info.caiYunUrl+":发生错误:"+err.Error(), common.ErrType)
 			goto end
@@ -107,7 +94,7 @@ func (info *urlInfo) watchWeather() {
 }
 
 // 雨水
-func (info *urlInfo) getRainData(res *Weather, _realtime *Realtime) string {
+func (info *UrlInfo) getRainData(res *Weather, _realtime *Realtime) string {
 	rainMsg := "\n●"
 	var weatherMsg string
 	//	雨水
@@ -125,7 +112,7 @@ func (info *urlInfo) getRainData(res *Weather, _realtime *Realtime) string {
 }
 
 // 风向
-func (info *urlInfo) getWindData(_realtime *Realtime) string {
+func (info *UrlInfo) getWindData(_realtime *Realtime) string {
 	var windStr string
 	// 风向
 	val := (_realtime.Wind.Direction - 11.26) / 22.50
@@ -133,23 +120,23 @@ func (info *urlInfo) getWindData(_realtime *Realtime) string {
 	if val < 0 || index == 0 {
 		windStr = "北"
 	} else {
-		if windStr = windDirection[index]; windStr == "" {
+		if windStr = WindDirection[index]; windStr == "" {
 			if _realtime.Wind.Direction >= UnusualWind[index] {
 				index++
 			} else {
 				index--
 			}
-			windStr = windDirection[index]
+			windStr = WindDirection[index]
 		}
 	}
 
-	_windLevel := (*windLevel[int(_realtime.Wind.Speed)])
+	_windLevel := (*WindLevel[int(_realtime.Wind.Speed)])
 	windStr = fmt.Sprintf("%s风 %s", windStr, _windLevel)
 	return windStr
 }
 
 // 预警
-func (info *urlInfo) getAlterData(res *Weather) string {
+func (info *UrlInfo) getAlterData(res *Weather) string {
 	info.msg.Reset()
 	info.msg.WriteString("\n\n------------预警------------")
 
