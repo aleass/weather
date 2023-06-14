@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"encoding/json"
@@ -29,14 +29,148 @@ var SkyconStatus = map[string]string{
 	"WIND":                "大风",
 }
 
+// 方向
+var WindDirection = [...]string{
+	"", //北东北 22.5
+	"东北",
+	"", //东东北 67.5
+	"东",
+	"", //东东南 112.5
+	"东南",
+	"", //南东南 157.5
+	"南",
+	"", //南西南 202.5
+	"西南",
+	"", //西西南 247.5
+	"西",
+	"", //西西北 292.5
+	"西北",
+	"", //北西北 337.5
+	"北",
+}
+
+// 转移不常见风向
+var UnusualWind = [15]float64{
+	0: 22.5, 2: 67.5, 4: 112.5, 6: 157.5, 8: 202.5, 10: 247.5, 12: 292.5, 14: 337.5,
+}
+
+var WindLevel = [221]*string{}
+
+// 风力描述
+var WindLevelStr = [...]string{
+	"无风",
+	"1级(微风徐徐)",
+	"2级(清风)",
+	"3级(树叶摇摆)",
+	"4级(树枝摇动)",
+	"5级(风力强劲)",
+	"6级(风力强劲)",
+	"7级(风力超强)",
+	"8级(狂风大作)",
+	"9级(狂风呼啸)",
+	"10(级暴风毁树)",
+	"11级(暴风毁树)",
+	"12级(飓风)",
+	"13级(台风)",
+	"14级(强台风)",
+	"15级(强台风)",
+	"16级(超强台风)",
+	"17级(超强台风)",
+}
+
+func init() {
+	WindLevel[0] = &WindLevelStr[0]
+	for i := 1; i <= 5; i++ {
+		WindLevel[i] = &WindLevelStr[1]
+	}
+	for i := 6; i <= 11; i++ {
+		WindLevel[i] = &WindLevelStr[2]
+	}
+	for i := 12; i <= 19; i++ {
+		WindLevel[i] = &WindLevelStr[3]
+	}
+	for i := 20; i <= 28; i++ {
+		WindLevel[i] = &WindLevelStr[4]
+	}
+	for i := 29; i <= 38; i++ {
+		WindLevel[i] = &WindLevelStr[5]
+	}
+	for i := 39; i <= 49; i++ {
+		WindLevel[i] = &WindLevelStr[6]
+	}
+	for i := 50; i <= 61; i++ {
+		WindLevel[i] = &WindLevelStr[7]
+	}
+	for i := 62; i <= 74; i++ {
+		WindLevel[i] = &WindLevelStr[8]
+	}
+	for i := 75; i <= 88; i++ {
+		WindLevel[i] = &WindLevelStr[9]
+	}
+	for i := 89; i <= 102; i++ {
+		WindLevel[i] = &WindLevelStr[10]
+	}
+	for i := 103; i <= 117; i++ {
+		WindLevel[i] = &WindLevelStr[11]
+	}
+	for i := 118; i <= 133; i++ {
+		WindLevel[i] = &WindLevelStr[12]
+	}
+	for i := 134; i <= 149; i++ {
+		WindLevel[i] = &WindLevelStr[13]
+	}
+	for i := 150; i <= 166; i++ {
+		WindLevel[i] = &WindLevelStr[14]
+	}
+	for i := 167; i <= 183; i++ {
+		WindLevel[i] = &WindLevelStr[15]
+	}
+	for i := 184; i <= 201; i++ {
+		WindLevel[i] = &WindLevelStr[16]
+	}
+	for i := 202; i <= 220; i++ {
+		WindLevel[i] = &WindLevelStr[17]
+	}
+}
+
 //<0.031	<0.08	无雨／雪
 //0.031 ～ 0.25	0.08~3.44	小雨／雪
 //0.25 ～ 0.35	3.44~11.33	中雨／雪
 //0.35 ～ 0.48	11.33~51.30	大雨／雪
 //>=0.48	>=51.30	暴雨／雪
+/*
+ "content": [
+	{
+		"province": "广东省",
+		"status": "预警中",
+		"code": "1602",
+		"description": "广州市气象台14日06时18分发布暴雨黄色和雷雨大风黄色预警信号:受佛山方向移近的雷雨云团影响，预计未来1~3小时广州市越秀区、天河区降水明显，累积雨量30~50毫米，并伴有6级左右短时大风和雷电。从14日06时18分起，广州市越秀区、天河区暴雨和雷雨大风黄色预警信号生效，正值上班上学高峰期，请注意做好防御工作。广州市气象台06月14日06时18分发布。",
+		"regionId": "",
+		"county": "广州市",
+		"pubtimestamp": 1686694680,
+		"latlon": [
+			23.130061,
+			113.264499
+		],
+		"city": "广东省",
+		"alertId": "44010041600000_20230614062133",
+		"title": "广州市气象台发布雷雨大风黄色预警[III级/较重]",
+		"adcode": "440100",
+		"source": "国家预警信息发布中心",
+		"location": "广东省广州市",
+		"request_status": "ok"
+	}
+],
 
-//中国AQI国标将空气质量分为六个等级：
 
+
+标题:广州市气象台发布雷雨大风黄色预警[III级/较重]:
+内容:广州市气象台14日06时18分发布暴雨黄色和雷雨大风黄色预警信号:受佛山方向移近的雷雨云团影响，预计未来1~3小时广州市越秀区、天河区降水明显，累积雨量30~50毫米，并伴有6级左右短时大风和雷电。从14日06时18分起，广州市越秀区、天河区暴雨和雷雨大风黄色预警信号生效，正值上班上学高峰期，请注意做好防御工作。广州市气象台06月14日06时18分发布。
+状态:预警中
+来源:国家预警信息发布中心
+
+
+*/
 type Weather struct {
 	Status     string    `json:"status" desc:""`
 	ApiVersion string    `json:"api_version" desc:""`
@@ -49,15 +183,31 @@ type Weather struct {
 	Location   []float64 `json:"location" desc:""`
 	Result     struct {
 		Alert struct {
-			Status  string        `json:"status" desc:""`
-			Content []interface{} `json:"content" desc:""`
+			Status  string `json:"status" desc:""`
+			Content []struct {
+				//Province     string `json:"province" desc:"省份"`
+				Status string `json:"status" desc:"状态"`
+				//Code         string `json:"code" desc:""`
+				Description string `json:"description" desc:"详情"`
+				//RegionId     string `json:"regionId" desc:""`
+				//County       string `json:"county" desc:"县"`
+				Pubtimestamp int64 `json:"pubtimestamp" desc:"发布时间"`
+				//Latlon       []float64 `json:"latlon" desc:"经纬度"`
+				//City         string    `json:"city" desc:"城市"`
+				//AlertId       string    `json:"alertId" desc:"预警id"`
+				Title string `json:"title" desc:"标题"`
+				//Adcode        string    `json:"adcode" desc:"代码"`
+				Source        string `json:"source" desc:"来源"`
+				Location      string `json:"location" desc:"地区"`
+				RequestStatus string `json:"request_status" desc:"ok"`
+			} `json:"content" desc:""`
 			Adcodes []struct {
 				Adcode int    `json:"adcode" desc:""`
 				Name   string `json:"name" desc:"地点"` //上海 desc:""市
 			} `json:"adcodes" desc:""`
 		} `json:"alert" desc:"地址"`
 		//
-		Realtime realtime `json:"realtime" desc:"实时级别预报"`
+		Realtime Realtime `json:"realtime" desc:"实时级别预报"`
 		Minutely struct {
 			//Status          string    `json:"status" desc:""`
 			//Datasource string `json:"datasource" desc:"数据源"`
@@ -317,7 +467,7 @@ type Weather struct {
 		ForecastKeypoint string `json:"forecast_keypoint" desc:"自然语言描述当前情况"`
 	} `json:"result" desc:""`
 }
-type realtime struct {
+type Realtime struct {
 	//Status  string        `json:"status" desc:""`
 	Temperature float64 `json:"temperature"  desc:"温度"`
 	Humidity    float64 `json:"humidity" desc:"地表 2 米湿度相对湿度(%)"`
@@ -325,10 +475,10 @@ type realtime struct {
 	Skycon string `json:"skycon" desc:"天气现象"`
 	//Visibility  float64 `json:"visibility" desc:"地表水平能见度"`
 	//Dswrf       float64 `json:"dswrf" desc:"向下短波辐射通量(W/M2)"`
-	//		Wind struct {
-	//			Speed float64 `json:"speed" desc:"风速 米/秒"`
-	//			Direction float64 `json:"direction" desc:"风向"`
-	//		} `json:"wind" desc:"风速"`
+	Wind struct {
+		Speed     float64 `json:"speed" desc:"风速 米/秒"`
+		Direction float64 `json:"direction" desc:"风向"`
+	} `json:"wind" desc:"风速"`
 
 	//Pressure            float64 `json:"pressure" desc:"地面气压"`
 	ApparentTemperature float64 `json:"apparent_temperature" desc:"体感温度"`
@@ -373,7 +523,7 @@ type realtime struct {
 }
 
 // 获取数据
-func get_data(url string) (*Weather, error) {
+func GetWeatherRawData(url string) (*Weather, error) {
 	response, err := http.Get(url)
 	if err != nil {
 		return nil, err

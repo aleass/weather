@@ -1,35 +1,35 @@
-package main
+package service
 
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
-	"log"
 	"os"
+	"strings"
+	"time"
+	"weather/common"
 )
 
-type Config struct {
-	// 结构映射
-	Wechat []struct {
-		Urls  string `mapstructure:"url"`
-		Notes string `mapstructure:"note"`
-	} `mapstructure:"wechat"`
-	CaiYun struct {
-		Token  string `json:"token"`
-		Addres []struct {
-			Name        string `json:"name"`
-			WechatNotes string `json:"wechatNotes"`
-			Coordinate  string `json:"coordinate"`
-			Switch      bool   `json:"switch" desc:"开关"`
-		} `json:"addres"`
-	} `json:"caiyun"`
+const (
+	wechatUrl = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
+	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
+)
+
+type UrlInfo struct {
+	name      string        `desc:"地址"`
+	caiYunUrl string        `desc:"caiyun url"`
+	weChatUrl string        `desc:"wechat url"`
+	_switch   chan struct{} `desc:"开关"`
+	isRun     bool          `desc:"是否运行"`
+	watchTime time.Duration `desc:"监控时间:分钟"`
+	msg       strings.Builder
 }
 
 // 运行
-func run() {
+func Run() {
 	var (
-		taskMap  = map[string]*url_info{} //任务控制
-		myConfig = Config{}
+		taskMap  = map[string]*UrlInfo{} //任务控制
+		myConfig = common.Config{}
 		vip      = viper.New()
 		path     = "pkg/config.yaml"
 	)
@@ -45,13 +45,14 @@ func run() {
 	//创建一个监控对象
 	watch, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		common.LogSend("error:"+err.Error(), common.ErrType)
 	}
 	//添加要监控的对象，文件或文件夹
-	err = watch.Add(path)
-	if err != nil {
-		log.Fatal(err)
+
+	if err = watch.Add(path); err != nil {
+		common.LogSend("error:"+err.Error(), common.ErrType)
 	}
+	defer watch.Close()
 	for {
 		if err = vip.ReadInConfig(); err != nil {
 			panic(fmt.Errorf("无法读取配置文件: %w", err))
@@ -67,31 +68,32 @@ func run() {
 
 		var notes = make(map[string]string, len(myConfig.Wechat))
 		for _, v := range myConfig.Wechat {
-			notes[v.Notes] = v.Urls
+			notes[v.Notes] = v.Token
 		}
 
 		for _, v := range myConfig.CaiYun.Addres {
 			info, ok := taskMap[v.Name]
 			if !ok {
 				//生成一个任务
-				task := &url_info{
+				task := &UrlInfo{
 					name:      v.Name,
-					caiyunUrl: fmt.Sprintf(caiyunUrl, myConfig.CaiYun.Token, v.Coordinate),
-					weChatUrl: notes[v.WechatNotes],
+					caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
+					weChatUrl: wechatUrl + notes[v.WechatNotes],
 					_switch:   make(chan struct{}),
+					watchTime: 5, //默认10分钟
 				}
 				taskMap[v.Name] = task
 				info = task
 			}
-			if !v.Switch && info.isrun {
+			if !v.Switch && info.isRun {
 				info._switch <- struct{}{} //关闭一个任务
-				info.isrun = false
-			} else if v.Switch && !info.isrun {
-				info.isrun = true
-				go watch_weather(info) //生成一个监控任务
+				info.isRun = false
+			} else if v.Switch && !info.isRun {
+				info.isRun = true
+				go info.WatchWeather() //生成一个监控任务
 			}
 		}
+		common.ErrorUrl = wechatUrl + notes["error"]
 		<-watch.Events //文件监控
 	}
-	watch.Close()
 }
