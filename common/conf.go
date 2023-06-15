@@ -15,4 +15,9 @@ type Config struct {
 			Switch      bool   `json:"switch" desc:"开关"`
 		} `json:"addres"`
 	} `json:"caiyun"`
+
+	UrlConfigPass []struct {
+		Name  string `json:"name"`
+		Notes string `mapstructure:"note"`
+	} `json:"urlConfigPass"`
 }

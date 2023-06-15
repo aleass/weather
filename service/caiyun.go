@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	msg = " %s\n●温度:%.1fC° 体感:%s(%.1fC°)\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s\n●未来24小时天气:%s"
+	msg = "%s %s %s %.1fC° %s %s\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s,体感温度:%.1fC°\n●未来24小时天气:%s"
 )
 
 // 减少一瞬间请求
@@ -25,12 +25,12 @@ func (info *UrlInfo) WatchWeather() {
 	}()
 	//默认轮询监控,时间频率为60分钟
 	var (
-		res                        *Weather
-		err                        error
-		lastTime                   int64
-		realtime                   Realtime
-		_weatherMsg, _alertMsg     string
-		rainMsg, windMsg, alertMsg string
+		res                           *Weather
+		err                           error
+		lastTime                      int64
+		realtime                      Realtime
+		_weatherMsg, _alertMsg, _name string
+		rainMsg, windMsg, alertMsg    string
 	)
 
 	for {
@@ -64,14 +64,16 @@ func (info *UrlInfo) WatchWeather() {
 		realtime = res.Result.Realtime
 
 		//地址
+		_name = info.name
 		if info.isUrlConfig && len(res.Result.Alert.Adcodes) > 0 {
+			_name += ":"
 			for _, adcode := range res.Result.Alert.Adcodes {
-				info.name += adcode.Name
+				_name += adcode.Name
 			}
 		}
 
 		//雨水
-		rainMsg = info.getRainData(res, &realtime)
+		rainMsg = info.getRainData(&realtime)
 
 		// 风向
 		windMsg = info.getWindData(&realtime)
@@ -84,10 +86,10 @@ func (info *UrlInfo) WatchWeather() {
 		//发送大于6小时才发生 天气发生变化 预警变更(取消或新增,修改)
 		if now.Unix()-lastTime >= 6*3600 || _weatherMsg != SkyconStatus[realtime.Skycon] || alertMsg != _alertMsg {
 			//发送
-			common.Send(now.Format("15:04:05 ")+info.name+
-				fmt.Sprintf(msg, rainMsg, realtime.Temperature, realtime.LifeIndex.Comfort.Desc, realtime.ApparentTemperature,
-					realtime.LifeIndex.Ultraviolet.Desc, realtime.AirQuality.Description.Chn,
-					realtime.AirQuality.Aqi.Chn, realtime.Humidity*100, windMsg, res.Result.Hourly.Description)+alertMsg, info.weChatUrl)
+			common.Send(fmt.Sprintf(msg, now.Format("15:04:05 "), _name, SkyconStatus[realtime.Skycon],
+				realtime.Temperature, realtime.LifeIndex.Comfort.Desc, rainMsg, realtime.LifeIndex.Ultraviolet.Desc,
+				realtime.AirQuality.Description.Chn, realtime.AirQuality.Aqi.Chn, realtime.Humidity*100, windMsg,
+				realtime.ApparentTemperature, res.Result.Hourly.Description)+alertMsg, info.weChatUrl)
 
 			//记录这次发送时间和信息
 			lastTime = now.Unix()
@@ -101,21 +103,15 @@ func (info *UrlInfo) WatchWeather() {
 }
 
 // 雨水
-func (info *UrlInfo) getRainData(res *Weather, _realtime *Realtime) string {
-	rainMsg := "\n●"
-	var weatherMsg string
+func (info *UrlInfo) getRainData(_realtime *Realtime) string {
 	//	雨水
 	switch _realtime.Skycon {
 	case "LIGHT_RAIN", "MODERATE_RAIN", "HEAVY_RAIN", "STORM_RAIN":
-		rainMsg = fmt.Sprintf("\n●降水强度:%.1f毫米/小时,最近的降水带距离%.1f公里和降水强度%.1f毫米/小时,",
+		return fmt.Sprintf("\n●降水强度:%.1f毫米/小时,最近的降水带距离%.1f公里和降水强度%.1f毫米/小时,",
 			_realtime.Precipitation.Local.Intensity, _realtime.Precipitation.Nearest.Distance, _realtime.Precipitation.Nearest.Intensity)
 	}
-	if index := strings.Index(res.Result.Minutely.Description, "还在加班么？注意休息哦"); index != -1 {
-		weatherMsg = SkyconStatus[_realtime.Skycon] + rainMsg + res.Result.Minutely.Description[:index]
-	} else {
-		weatherMsg = SkyconStatus[_realtime.Skycon] + rainMsg + res.Result.Minutely.Description
-	}
-	return weatherMsg
+
+	return ""
 }
 
 // 风向

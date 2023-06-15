@@ -26,16 +26,18 @@ type UrlInfo struct {
 	isUrlConfig bool `desc:"是否url配置"`
 }
 
-var myConfig = common.Config{}
-var notes = make(map[string]string, len(myConfig.Wechat))
+var (
+	myConfig       = common.Config{}
+	wechatNoteMap  = make(map[string]string, len(myConfig.Wechat))
+	allowUrlConfig = make(map[string]string, len(myConfig.UrlConfigPass))
+)
 
 // 运行
 func Run() {
 	var (
 		taskMap = map[string]*UrlInfo{} //任务控制
-
-		vip  = viper.New()
-		path = "pkg/config.yaml"
+		vip     = viper.New()
+		path    = "pkg/config.yaml"
 	)
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
@@ -71,20 +73,17 @@ func Run() {
 		}
 
 		for _, v := range myConfig.Wechat {
-			notes[v.Notes] = v.Token
+			wechatNoteMap[v.Notes] = v.Token
+		}
+		for _, v := range myConfig.UrlConfigPass {
+			allowUrlConfig[v.Name] = v.Notes
 		}
 
 		for _, v := range myConfig.CaiYun.Addres {
 			info, ok := taskMap[v.Name]
 			if !ok {
 				//生成一个任务
-				task := &UrlInfo{
-					name:      v.Name,
-					caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
-					weChatUrl: wechatUrl + notes[v.WechatNotes],
-					_switch:   make(chan struct{}),
-					watchTime: 5, //默认10分钟
-				}
+				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes)
 				taskMap[v.Name] = task
 				info = task
 			}
@@ -96,7 +95,18 @@ func Run() {
 				go info.WatchWeather() //生成一个监控任务
 			}
 		}
-		common.ErrorUrl = wechatUrl + notes["error"]
+		common.ErrorUrl = wechatUrl + wechatNoteMap["error"]
 		<-watch.Events //文件监控
 	}
+}
+
+func getUrlInfo(name, coordinate, wechatNotes string) *UrlInfo {
+	info := &UrlInfo{
+		name:      name,
+		caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
+		weChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
+		_switch:   make(chan struct{}, 1),
+		watchTime: 5, //默认10分钟
+	}
+	return info
 }

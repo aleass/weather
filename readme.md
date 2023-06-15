@@ -21,3 +21,10 @@ caiyun:
   > 坐标的经纬度
   - switch : bool
   > 是否启用
+
+urlConfigPass:
+  > url订阅配置
+  - name: xxxx
+  > 账号
+    note: wechat.note
+  > wechat的note
