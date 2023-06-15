@@ -16,22 +16,26 @@ const (
 )
 
 type UrlInfo struct {
-	name      string        `desc:"地址"`
-	caiYunUrl string        `desc:"caiyun url"`
-	weChatUrl string        `desc:"wechat url"`
-	_switch   chan struct{} `desc:"开关"`
-	isRun     bool          `desc:"是否运行"`
-	watchTime time.Duration `desc:"监控时间:分钟"`
-	msg       strings.Builder
+	name        string        `desc:"地址"`
+	caiYunUrl   string        `desc:"caiyun url"`
+	weChatUrl   string        `desc:"wechat url"`
+	_switch     chan struct{} `desc:"开关"`
+	isRun       bool          `desc:"是否运行"`
+	watchTime   time.Duration `desc:"监控时间:分钟"`
+	msg         strings.Builder
+	isUrlConfig bool `desc:"是否url配置"`
 }
+
+var myConfig = common.Config{}
+var notes = make(map[string]string, len(myConfig.Wechat))
 
 // 运行
 func Run() {
 	var (
-		taskMap  = map[string]*UrlInfo{} //任务控制
-		myConfig = common.Config{}
-		vip      = viper.New()
-		path     = "pkg/config.yaml"
+		taskMap = map[string]*UrlInfo{} //任务控制
+
+		vip  = viper.New()
+		path = "pkg/config.yaml"
 	)
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
@@ -66,7 +70,6 @@ func Run() {
 			panic("token，任务，发送url为空")
 		}
 
-		var notes = make(map[string]string, len(myConfig.Wechat))
 		for _, v := range myConfig.Wechat {
 			notes[v.Notes] = v.Token
 		}

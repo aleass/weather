@@ -63,6 +63,13 @@ func (info *UrlInfo) WatchWeather() {
 		}
 		realtime = res.Result.Realtime
 
+		//地址
+		if info.isUrlConfig && len(res.Result.Alert.Adcodes) > 0 {
+			for _, adcode := range res.Result.Alert.Adcodes {
+				info.name += adcode.Name
+			}
+		}
+
 		//雨水
 		rainMsg = info.getRainData(res, &realtime)
 
