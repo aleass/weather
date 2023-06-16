@@ -16,14 +16,21 @@ const (
 )
 
 type UrlInfo struct {
-	name        string        `desc:"地址"`
-	caiYunUrl   string        `desc:"caiyun url"`
-	weChatUrl   string        `desc:"wechat url"`
-	_switch     chan struct{} `desc:"开关"`
-	isRun       bool          `desc:"是否运行"`
-	watchTime   time.Duration `desc:"监控时间:分钟"`
+	Name    string `desc:"地址" json:"name" `
+	Address string `json:"address" desc:"url 配置的地址"`
+	IsRun   bool   `desc:"是否运行" json:"is_run"`
+}
+
+type urlInfo struct {
+	Name        string        `desc:"名字"`
+	address     string        `desc:"url 配置的地址"`
+	CaiYunUrl   string        `desc:"caiyun url" json:"cai_yun_url"`
+	WeChatUrl   string        `desc:"wechat url" json:"we_chat_url"`
+	Switch      chan struct{} `desc:"开关" json:"__switch"`
+	IsRun       bool          `desc:"是否运行" json:"is_run"`
+	WatchTime   time.Duration `desc:"监控时间:分钟" json:"watch_time"`
 	msg         strings.Builder
-	isUrlConfig bool `desc:"是否url配置"`
+	IsUrlConfig bool `desc:"是否url配置" json:"is_url_config"`
 }
 
 var (
@@ -35,7 +42,7 @@ var (
 // 运行
 func Run() {
 	var (
-		taskMap = map[string]*UrlInfo{} //任务控制
+		taskMap = map[string]*urlInfo{} //任务控制
 		vip     = viper.New()
 		path    = "pkg/config.yaml"
 	)
@@ -87,11 +94,10 @@ func Run() {
 				taskMap[v.Name] = task
 				info = task
 			}
-			if !v.Switch && info.isRun {
-				info._switch <- struct{}{} //关闭一个任务
-				info.isRun = false
-			} else if v.Switch && !info.isRun {
-				info.isRun = true
+			if !v.Switch && info.IsRun {
+				info.Switch <- struct{}{} //关闭一个任务
+				info.IsRun = false
+			} else if v.Switch && !info.IsRun {
 				go info.WatchWeather() //生成一个监控任务
 			}
 		}
@@ -100,13 +106,13 @@ func Run() {
 	}
 }
 
-func getUrlInfo(name, coordinate, wechatNotes string) *UrlInfo {
-	info := &UrlInfo{
-		name:      name,
-		caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
-		weChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
-		_switch:   make(chan struct{}, 1),
-		watchTime: 5, //默认10分钟
+func getUrlInfo(name, coordinate, wechatNotes string) *urlInfo {
+	info := &urlInfo{
+		Name:      name,
+		CaiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
+		WeChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
+		Switch:    make(chan struct{}, 1),
+		WatchTime: 5, //默认10分钟
 	}
 	return info
 }

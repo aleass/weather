@@ -16,28 +16,31 @@ const (
 var delay = make(chan struct{}, 1)
 
 // 天气监控
-func (info *UrlInfo) WatchWeather() {
+func (info *urlInfo) WatchWeather() {
 	defer func() {
 		if err := recover(); err != nil {
 			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
-			info.isRun = false
+			info.IsRun = false
 		}
 	}()
+	info.IsRun = true
 	//默认轮询监控,时间频率为60分钟
 	var (
-		res                           *Weather
-		err                           error
-		lastTime                      int64
-		realtime                      Realtime
-		_weatherMsg, _alertMsg, _name string
-		rainMsg, windMsg, alertMsg    string
+		res                        *Weather
+		err                        error
+		lastDate                   int
+		isTimeTo                   = true
+		realtime                   Realtime
+		_weatherMsg, _alertMsg     string
+		rainMsg, windMsg, alertMsg string
 	)
 
 	for {
 		now := time.Now()
 		select {
-		case <-info._switch:
-			println("任务退出：", info.name)
+		case <-info.Switch:
+			println("任务退出：", info.Name)
+			info.IsRun = false
 			return
 		default:
 		}
@@ -48,9 +51,9 @@ func (info *UrlInfo) WatchWeather() {
 
 		//并发控制
 		delay <- struct{}{}
-		res, err = GetWeatherRawData(info.caiYunUrl)
+		res, err = GetWeatherRawData(info.CaiYunUrl)
 		if err != nil {
-			common.LogSend(info.caiYunUrl+":发生错误:"+err.Error(), common.ErrType)
+			common.LogSend(info.CaiYunUrl+":发生错误:"+err.Error(), common.ErrType)
 			goto end
 		}
 		//防止并发请求
@@ -58,17 +61,17 @@ func (info *UrlInfo) WatchWeather() {
 		<-delay
 
 		if err != nil {
-			common.LogSend(info.caiYunUrl+":发生错误:"+err.Error(), common.ErrType)
+			common.LogSend(info.CaiYunUrl+":发生错误:"+err.Error(), common.ErrType)
 			goto end
 		}
 		realtime = res.Result.Realtime
 
 		//地址
-		_name = info.name
-		if info.isUrlConfig && len(res.Result.Alert.Adcodes) > 0 {
-			_name += ":"
+		info.address = ""
+		if info.IsUrlConfig && len(res.Result.Alert.Adcodes) > 0 {
+			info.address += " "
 			for _, adcode := range res.Result.Alert.Adcodes {
-				_name += adcode.Name
+				info.address += adcode.Name
 			}
 		}
 
@@ -83,27 +86,46 @@ func (info *UrlInfo) WatchWeather() {
 			alertMsg = info.getAlterData(res)
 		}
 
+		//触发的时间段
+		switch now.Hour() {
+		case 0, 6, 12, 18:
+			isTimeTo = true
+		}
+
 		//发送大于6小时才发生 天气发生变化 预警变更(取消或新增,修改)
-		if now.Unix()-lastTime >= 6*3600 || _weatherMsg != SkyconStatus[realtime.Skycon] || alertMsg != _alertMsg {
+		if isTimeTo && now.Hour() != lastDate || _weatherMsg != SkyconStatus[realtime.Skycon] || alertMsg != _alertMsg {
 			//发送
-			common.Send(fmt.Sprintf(msg, now.Format("15:04:05 "), _name, SkyconStatus[realtime.Skycon],
+			common.Send(fmt.Sprintf(msg, now.Format("15:04:05 "), info.Name+info.address, SkyconStatus[realtime.Skycon],
 				realtime.Temperature, realtime.LifeIndex.Comfort.Desc, rainMsg, realtime.LifeIndex.Ultraviolet.Desc,
 				realtime.AirQuality.Description.Chn, realtime.AirQuality.Aqi.Chn, realtime.Humidity*100, windMsg,
-				realtime.ApparentTemperature, res.Result.Hourly.Description)+alertMsg, info.weChatUrl)
+				realtime.ApparentTemperature, res.Result.Hourly.Description)+alertMsg, info.WeChatUrl)
+
+			switch {
+			case isTimeTo && now.Hour() != lastDate:
+				common.Logger.Info(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
+				println(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
+			case _weatherMsg != SkyconStatus[realtime.Skycon]:
+				common.Logger.Info(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
+				println(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
+			case alertMsg != _alertMsg:
+				common.Logger.Info(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
+				println(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
+			}
 
 			//记录这次发送时间和信息
-			lastTime = now.Unix()
+			lastDate = now.Hour()
 			_weatherMsg = SkyconStatus[realtime.Skycon]
 			_alertMsg = alertMsg
 			alertMsg = ""
 		}
 	end:
-		time.Sleep(time.Minute * info.watchTime)
+		isTimeTo = false
+		time.Sleep(time.Minute * info.WatchTime)
 	}
 }
 
 // 雨水
-func (info *UrlInfo) getRainData(_realtime *Realtime) string {
+func (info *urlInfo) getRainData(_realtime *Realtime) string {
 	//	雨水
 	switch _realtime.Skycon {
 	case "LIGHT_RAIN", "MODERATE_RAIN", "HEAVY_RAIN", "STORM_RAIN":
@@ -115,7 +137,7 @@ func (info *UrlInfo) getRainData(_realtime *Realtime) string {
 }
 
 // 风向
-func (info *UrlInfo) getWindData(_realtime *Realtime) string {
+func (info *urlInfo) getWindData(_realtime *Realtime) string {
 	var windStr string
 	// 风向
 	val := (_realtime.Wind.Direction - 11.26) / 22.50
@@ -139,7 +161,7 @@ func (info *UrlInfo) getWindData(_realtime *Realtime) string {
 }
 
 // 预警
-func (info *UrlInfo) getAlterData(res *Weather) string {
+func (info *urlInfo) getAlterData(res *Weather) string {
 	info.msg.Reset()
 	info.msg.WriteString("\n\n------------预警------------")
 
