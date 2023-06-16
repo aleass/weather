@@ -202,8 +202,8 @@ type Weather struct {
 				RequestStatus string `json:"request_status" desc:"ok"`
 			} `json:"content" desc:""`
 			Adcodes []struct {
-				Adcode int    `json:"adcode" desc:""`
-				Name   string `json:"name" desc:"地点"` //上海 desc:""市
+				//Adcode int    `json:"adcode" desc:""`
+				Name string `json:"name" desc:"地点"` //上海 desc:""市
 			} `json:"adcodes" desc:""`
 		} `json:"alert" desc:"地址"`
 		//

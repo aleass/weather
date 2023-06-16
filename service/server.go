@@ -16,25 +16,35 @@ const (
 )
 
 type UrlInfo struct {
-	name      string        `desc:"地址"`
-	caiYunUrl string        `desc:"caiyun url"`
-	weChatUrl string        `desc:"wechat url"`
-	_switch   chan struct{} `desc:"开关"`
-	isRun     bool          `desc:"是否运行"`
-	watchTime time.Duration `desc:"监控时间:分钟"`
-	msg       strings.Builder
+	Name    string `desc:"地址" json:"name" `
+	Address string `json:"address" desc:"url 配置的地址"`
+	IsRun   bool   `desc:"是否运行" json:"is_run"`
 }
 
-var myConfig = common.Config{}
-var notes = make(map[string]string, len(myConfig.Wechat))
+type urlInfo struct {
+	Name        string        `desc:"名字"`
+	address     string        `desc:"url 配置的地址"`
+	CaiYunUrl   string        `desc:"caiyun url" json:"cai_yun_url"`
+	WeChatUrl   string        `desc:"wechat url" json:"we_chat_url"`
+	Switch      chan struct{} `desc:"开关" json:"__switch"`
+	IsRun       bool          `desc:"是否运行" json:"is_run"`
+	WatchTime   time.Duration `desc:"监控时间:分钟" json:"watch_time"`
+	msg         strings.Builder
+	IsUrlConfig bool `desc:"是否url配置" json:"is_url_config"`
+}
+
+var (
+	myConfig       = common.Config{}
+	wechatNoteMap  = make(map[string]string, len(myConfig.Wechat))
+	allowUrlConfig = make(map[string]string, len(myConfig.UrlConfigPass))
+)
 
 // 运行
 func Run() {
 	var (
-		taskMap = map[string]*UrlInfo{} //任务控制
-
-		vip  = viper.New()
-		path = "pkg/config.yaml"
+		taskMap = map[string]*urlInfo{} //任务控制
+		vip     = viper.New()
+		path    = "pkg/config.yaml"
 	)
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
@@ -70,32 +80,39 @@ func Run() {
 		}
 
 		for _, v := range myConfig.Wechat {
-			notes[v.Notes] = v.Token
+			wechatNoteMap[v.Notes] = v.Token
+		}
+		for _, v := range myConfig.UrlConfigPass {
+			allowUrlConfig[v.Name] = v.Notes
 		}
 
 		for _, v := range myConfig.CaiYun.Addres {
 			info, ok := taskMap[v.Name]
 			if !ok {
 				//生成一个任务
-				task := &UrlInfo{
-					name:      v.Name,
-					caiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, v.Coordinate),
-					weChatUrl: wechatUrl + notes[v.WechatNotes],
-					_switch:   make(chan struct{}),
-					watchTime: 5, //默认10分钟
-				}
+				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes)
 				taskMap[v.Name] = task
 				info = task
 			}
-			if !v.Switch && info.isRun {
-				info._switch <- struct{}{} //关闭一个任务
-				info.isRun = false
-			} else if v.Switch && !info.isRun {
-				info.isRun = true
+			if !v.Switch && info.IsRun {
+				info.Switch <- struct{}{} //关闭一个任务
+				info.IsRun = false
+			} else if v.Switch && !info.IsRun {
 				go info.WatchWeather() //生成一个监控任务
 			}
 		}
-		common.ErrorUrl = wechatUrl + notes["error"]
+		common.ErrorUrl = wechatUrl + wechatNoteMap["error"]
 		<-watch.Events //文件监控
 	}
+}
+
+func getUrlInfo(name, coordinate, wechatNotes string) *urlInfo {
+	info := &urlInfo{
+		Name:      name,
+		CaiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
+		WeChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
+		Switch:    make(chan struct{}, 1),
+		WatchTime: 5, //默认10分钟
+	}
+	return info
 }
