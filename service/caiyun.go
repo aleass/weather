@@ -100,17 +100,17 @@ func (info *urlInfo) WatchWeather() {
 				realtime.AirQuality.Description.Chn, realtime.AirQuality.Aqi.Chn, realtime.Humidity*100, windMsg,
 				realtime.ApparentTemperature, res.Result.Hourly.Description)+alertMsg, info.WeChatUrl)
 
-			switch {
-			case isTimeTo && now.Hour() != lastDate:
-				common.Logger.Info(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
-				println(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
-			case _weatherMsg != SkyconStatus[realtime.Skycon]:
-				common.Logger.Info(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
-				println(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
-			case alertMsg != _alertMsg:
-				common.Logger.Info(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
-				println(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
-			}
+			//switch {
+			//case isTimeTo && now.Hour() != lastDate:
+			//	common.Logger.Info(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
+			//	println(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
+			//case _weatherMsg != SkyconStatus[realtime.Skycon]:
+			//	common.Logger.Info(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
+			//	println(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
+			//case alertMsg != _alertMsg:
+			//	common.Logger.Info(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
+			//	println(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
+			//}
 
 			//记录这次发送时间和信息
 			lastDate = now.Hour()

@@ -5,6 +5,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 	"weather/common"
@@ -19,6 +20,14 @@ type UrlInfo struct {
 	Name    string `desc:"地址" json:"name" `
 	Address string `json:"address" desc:"url 配置的地址"`
 	IsRun   bool   `desc:"是否运行" json:"is_run"`
+}
+
+type configInfo struct {
+	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
+	Ip          string `json:"ip"`
+	Op          string `json:"op" desc:"当前操作"`
+	Adcodes     string `json:"adcodes" desc:"经纬度"`
+	AllowNight  bool   `desc:"晚上是否运行运行"`
 }
 
 type urlInfo struct {
@@ -90,7 +99,7 @@ func Run() {
 			info, ok := taskMap[v.Name]
 			if !ok {
 				//生成一个任务
-				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes)
+				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
 				taskMap[v.Name] = task
 				info = task
 			}
@@ -106,13 +115,13 @@ func Run() {
 	}
 }
 
-func getUrlInfo(name, coordinate, wechatNotes string) *urlInfo {
+func getUrlInfo(name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) *urlInfo {
 	info := &urlInfo{
 		Name:      name,
 		CaiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
 		WeChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
 		Switch:    make(chan struct{}, 1),
-		WatchTime: 5, //默认10分钟
+		WatchTime: watchTime, //默认10分钟
 	}
 	return info
 }
