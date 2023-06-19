@@ -17,9 +17,10 @@ const (
 )
 
 type UrlInfo struct {
-	Name    string `desc:"地址" json:"name" `
-	Address string `json:"address" desc:"url 配置的地址"`
-	IsRun   bool   `desc:"是否运行" json:"is_run"`
+	Name        string `desc:"地址" json:"name" `
+	Address     string `json:"address" desc:"url 配置的地址"`
+	IsRun       bool   `desc:"是否运行" json:"is_run"`
+	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
 }
 
 type configInfo struct {
@@ -28,32 +29,36 @@ type configInfo struct {
 	Op          string `json:"op" desc:"当前操作"`
 	Adcodes     string `json:"adcodes" desc:"经纬度"`
 	AllowNight  bool   `desc:"晚上是否运行运行"`
+	Main        string `desc:"配置信息"`
 }
 
 type urlInfo struct {
-	Name        string        `desc:"名字"`
-	address     string        `desc:"url 配置的地址"`
-	CaiYunUrl   string        `desc:"caiyun url" json:"cai_yun_url"`
-	WeChatUrl   string        `desc:"wechat url" json:"we_chat_url"`
-	Switch      chan struct{} `desc:"开关" json:"__switch"`
-	IsRun       bool          `desc:"是否运行" json:"is_run"`
-	WatchTime   time.Duration `desc:"监控时间:分钟" json:"watch_time"`
-	msg         strings.Builder
-	IsUrlConfig bool `desc:"是否url配置" json:"is_url_config"`
+	Name      string        `desc:"名字"`
+	Notes     string        `desc:"备注"`
+	address   string        `desc:"url 配置的地址"`
+	CaiYunUrl string        `desc:"caiyun url" json:"cai_yun_url"`
+	WeChatUrl string        `desc:"wechat url" json:"we_chat_url"`
+	Switch    chan struct{} `desc:"开关" json:"__switch"`
+	IsRun     bool          `desc:"是否运行" json:"is_run"`
+	WatchTime time.Duration `desc:"监控时间:分钟" json:"watch_time"`
+	msg       strings.Builder
+	AllowWeek *[7]bool `desc:"不为空则指定星期运行"`
+	configInfo
 }
 
 var (
 	myConfig       = common.Config{}
 	wechatNoteMap  = make(map[string]string, len(myConfig.Wechat))
 	allowUrlConfig = make(map[string]string, len(myConfig.UrlConfigPass))
+	taskMap        = map[string]*urlInfo{} //任务控制
+
 )
 
 // 运行
 func Run() {
 	var (
-		taskMap = map[string]*urlInfo{} //任务控制
-		vip     = viper.New()
-		path    = "pkg/config.yaml"
+		vip  = viper.New()
+		path = "pkg/config.yaml"
 	)
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
@@ -88,6 +93,9 @@ func Run() {
 			panic("token，任务，发送url为空")
 		}
 
+		//map
+		common.SetToken(myConfig.QqMapToken, myConfig.GeoMapToken)
+
 		for _, v := range myConfig.Wechat {
 			wechatNoteMap[v.Notes] = v.Token
 		}
@@ -102,6 +110,8 @@ func Run() {
 				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
 				taskMap[v.Name] = task
 				info = task
+			} else {
+				updateUrlInfo(info, v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
 			}
 			if !v.Switch && info.IsRun {
 				info.Switch <- struct{}{} //关闭一个任务
@@ -115,13 +125,42 @@ func Run() {
 	}
 }
 
+func updateUrlInfo(user *urlInfo, name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) {
+	user.Name = name
+	user.CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate)
+	user.WeChatUrl = wechatUrl + wechatNoteMap[wechatNotes]
+	user.WatchTime = watchTime //默认10分
+	user.Notes = wechatNotes
+	if allowWeek != "" {
+		user.AllowWeek = &[7]bool{}
+		for _, w := range strings.Split(allowWeek, ",") {
+			week, err := strconv.Atoi(w)
+			if err != nil || week < 0 || week > 6 {
+				panic("invial  week")
+			}
+			user.AllowWeek[week] = true
+		}
+	}
+}
+
 func getUrlInfo(name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) *urlInfo {
-	info := &urlInfo{
+	user := &urlInfo{
 		Name:      name,
 		CaiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
 		WeChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
 		Switch:    make(chan struct{}, 1),
 		WatchTime: watchTime, //默认10分钟
+		Notes:     wechatNotes,
 	}
-	return info
+	if allowWeek != "" {
+		user.AllowWeek = &[7]bool{}
+		for _, w := range strings.Split(allowWeek, ",") {
+			week, err := strconv.Atoi(w)
+			if err != nil || week < 0 || week > 6 {
+				panic("invial  week")
+			}
+			user.AllowWeek[week] = true
+		}
+	}
+	return user
 }

@@ -44,8 +44,13 @@ func (info *urlInfo) WatchWeather() {
 			return
 		default:
 		}
-		//0点到6点 不发送
-		if now.Hour() < 6 && now.Hour() > 0 {
+		//week allow
+		if info.AllowWeek != nil && !info.AllowWeek[now.Weekday()] {
+			goto end
+		}
+
+		//除了手动设置，0点到6点 不发送
+		if !info.AllowNight && now.Hour() < 6 && now.Hour() > 0 {
 			goto end
 		}
 
@@ -67,9 +72,9 @@ func (info *urlInfo) WatchWeather() {
 		realtime = res.Result.Realtime
 
 		//地址
-		info.address = ""
+		info.address = " "
 		if info.IsUrlConfig && len(res.Result.Alert.Adcodes) > 0 {
-			info.address += " "
+			info.address += info.Main + ":"
 			for _, adcode := range res.Result.Alert.Adcodes {
 				info.address += adcode.Name
 			}

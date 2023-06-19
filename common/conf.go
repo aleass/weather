@@ -13,6 +13,7 @@ type Config struct {
 			WechatNotes string `json:"wechatNotes"`
 			Coordinate  string `json:"coordinate"`
 			Switch      bool   `json:"switch" desc:"开关"`
+			AllowWeek   string `json:"allowWeek"`
 		} `json:"addres"`
 	} `json:"caiyun"`
 

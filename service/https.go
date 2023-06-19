@@ -11,7 +11,6 @@ import (
 
 var (
 	timeDump = make(chan struct{}, 1)
-	localMap = map[string]*urlInfo{}
 )
 
 // Recover 错误
@@ -40,15 +39,17 @@ func HttpRun() {
 
 func ListConfigUser(context *gin.Context) {
 	var userList = []UrlInfo{}
-	for _, info := range localMap {
+	for _, info := range taskMap {
 		userList = append(userList, UrlInfo{
-			Address: info.address,
-			Name:    info.Name,
-			IsRun:   info.IsRun,
+			Address:     info.address,
+			Name:        info.Name,
+			IsRun:       info.IsRun,
+			IsUrlConfig: info.IsUrlConfig,
 		})
 	}
 	context.JSON(200, runtime.NumGoroutine())
 	context.JSON(200, userList)
+
 }
 func UserHandler(context *gin.Context) {
 	defer func() {
@@ -69,11 +70,11 @@ func UserHandler(context *gin.Context) {
 		return
 	}
 	var (
-		ip      = context.ClientIP()
-		adcodes string
-		err     error
+		ip                  = context.ClientIP()
+		adcodes, addr, main string
+		err                 error
 	)
-	info, ok := localMap[name]
+	info, ok := taskMap[name]
 	if op == "del" {
 		//任务退出
 		if !ok || !info.IsRun {
@@ -81,11 +82,24 @@ func UserHandler(context *gin.Context) {
 			return
 		}
 		//直接删除,否则会导致状态不一致
-		delete(localMap, name)
+		delete(taskMap, name)
 		info.Switch <- struct{}{} //关闭一个任务
 		goto end
 	}
 	op = "add"
+	//地址搜索
+	addr = context.Query("addr")
+	if addr != "" {
+		adcodes, addr, err = common.GetKeyWordAddr(addr)
+		if err != nil {
+			context.JSON(200, "ip or adcodes == nil")
+			return
+		}
+		if adcodes != "" {
+			main = addr
+			goto start
+		}
+	}
 	adcodes = context.Query("adcodes")
 
 	if ip == "" || adcodes == "" {
@@ -94,6 +108,7 @@ func UserHandler(context *gin.Context) {
 	}
 	//优先经纬度
 	if adcodes != "" {
+		main = adcodes
 		goto start
 	}
 	//ip判断
@@ -106,17 +121,18 @@ func UserHandler(context *gin.Context) {
 		context.JSON(200, ip+":经纬度找不到")
 		return
 	}
+	main = ip
 start:
 	if !ok {
 		info = getUrlInfo(name, adcodes, wechatNote, "", 1)
 		info.IsUrlConfig = true
 		timeDump <- struct{}{}
-		localMap[name] = info
+		taskMap[name] = info
 		<-timeDump
 		go info.WatchWeather()
 	} else {
 		op = "edit"
-		localMap[name].CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, adcodes)
+		taskMap[name].CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, adcodes)
 		if !info.IsRun { //启动
 			go info.WatchWeather()
 		}
@@ -124,10 +140,11 @@ start:
 	info.Ip = ip
 	info.Op = op
 	info.Adcodes = adcodes
+	info.Main = main
 	info.AllowNight = context.Query("night") == "true"
 end:
-	_msg := fmt.Sprintf("%s %s 操作:%s ip:%s 坐标:%s", time.Now().Format("2006-01-02 15:04:05"),
-		name, op, ip, adcodes)
+	_msg := fmt.Sprintf("%s %s 操作:%s-%s ip:%s 坐标:%s ", time.Now().Format("2006-01-02 15:04:05"),
+		name, op, main, ip, adcodes)
 	context.JSON(200, _msg)
 	common.LogSend(_msg, common.InfoErrorType)
 }
