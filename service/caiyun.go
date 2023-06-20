@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	msg = "%s %s %s %.1fC° %s %s\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s,体感温度:%.1fC°\n●未来24小时天气:%s"
+	msg     = "%s %s %s %.1fC° %s %s\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s,体感温度:%.1fC°\n●未来24小时天气:%s"
+	timeout = 3600 * 24 //1 day
 )
 
 // 减少一瞬间请求
@@ -44,13 +45,17 @@ func (info *urlInfo) WatchWeather() {
 			return
 		default:
 		}
-		//week allow
-		if info.AllowWeek != nil && !info.AllowWeek[now.Weekday()] {
-			goto end
-		}
 
-		//除了手动设置，0点到6点 不发送
-		if !info.AllowNight && now.Hour() < 6 && now.Hour() > 0 {
+		switch {
+		case info.IsUrlConfig && info.RunTime+timeout < now.Unix(): //url配置的限时
+			delete(taskMap, info.Name)
+			_msg := fmt.Sprintf("%s %s 操作:%s-%s ip:%s 坐标:%s ", time.Now().Format("2006-01-02 15:04:05"),
+				info.Name, "del", info.Main, info.Ip, info.Adcodes)
+			common.LogSend(_msg, common.InfoErrorType)
+			return
+		case info.AllowWeek != nil && !info.AllowWeek[now.Weekday()]: //week allow
+			goto end
+		case !info.AllowNight && now.Hour() < 6 && now.Hour() > 0: //除了手动设置，0点到6点 不发送
 			goto end
 		}
 
@@ -125,7 +130,7 @@ func (info *urlInfo) WatchWeather() {
 		}
 	end:
 		isTimeTo = false
-		time.Sleep(time.Minute * info.WatchTime)
+		time.Sleep(time.Minute * 1)
 	}
 }
 

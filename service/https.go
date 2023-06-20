@@ -74,6 +74,7 @@ func UserHandler(context *gin.Context) {
 		adcodes, addr, main string
 		err                 error
 	)
+	ip = "43.138.231.123"
 	info, ok := taskMap[name]
 	if op == "del" {
 		//任务退出
@@ -102,16 +103,18 @@ func UserHandler(context *gin.Context) {
 	}
 	adcodes = context.Query("adcodes")
 
-	if ip == "" || adcodes == "" {
-		context.JSON(200, "ip or adcodes == nil")
-		return
-	}
 	//优先经纬度
 	if adcodes != "" {
 		main = adcodes
 		goto start
 	}
+
 	//ip判断
+	if ip == "" {
+		context.JSON(200, "ip nil")
+		return
+	}
+
 	adcodes, err = common.GetIpAddress(ip)
 	if err != nil {
 		context.JSON(200, ip+err.Error())
@@ -121,6 +124,7 @@ func UserHandler(context *gin.Context) {
 		context.JSON(200, ip+":经纬度找不到")
 		return
 	}
+
 	main = ip
 start:
 	if !ok {

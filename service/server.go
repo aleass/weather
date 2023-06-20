@@ -43,6 +43,7 @@ type urlInfo struct {
 	WatchTime time.Duration `desc:"监控时间:分钟" json:"watch_time"`
 	msg       strings.Builder
 	AllowWeek *[7]bool `desc:"不为空则指定星期运行"`
+	RunTime   int64    `desc:"任务创建时间"`
 	configInfo
 }
 
@@ -56,6 +57,12 @@ var (
 
 // 运行
 func Run() {
+	defer func() {
+		if err := recover(); err != nil {
+			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
+		}
+		Run()
+	}()
 	var (
 		vip  = viper.New()
 		path = "pkg/config.yaml"
@@ -151,6 +158,7 @@ func getUrlInfo(name, coordinate, wechatNotes, allowWeek string, watchTime time.
 		Switch:    make(chan struct{}, 1),
 		WatchTime: watchTime, //默认10分钟
 		Notes:     wechatNotes,
+		RunTime:   time.Now().Unix(),
 	}
 	if allowWeek != "" {
 		user.AllowWeek = &[7]bool{}

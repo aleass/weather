@@ -21,4 +21,7 @@ type Config struct {
 		Name  string `json:"name"`
 		Notes string `mapstructure:"note"`
 	} `json:"urlConfigPass"`
+
+	GeoMapToken string `json:"geoMapToken"`
+	QqMapToken  string `json:"qqMapToken"`
 }
