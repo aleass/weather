@@ -37,7 +37,7 @@ func (user *Users) WatchWeather() {
 		for _, info := range user.ConfigGroup {
 			now := time.Now()
 			switch {
-			case info.Switch:
+			case !info.Switch:
 				continue
 			case info.IsUrlConfig && info.StartTime+timeout < now.Unix(): //url配置的限时
 				info.Switch = false
@@ -46,9 +46,9 @@ func (user *Users) WatchWeather() {
 				common.LogSend(_msg, common.InfoErrorType)
 				continue
 			case info.AllowWeek != nil && !info.AllowWeek[now.Weekday()]: //week allow
-				goto end
+				continue
 			case !info.AllowNight && now.Hour() < 6 && now.Hour() > 0: //除了手动设置，0点到6点 不发送
-				goto end
+				continue
 			}
 
 			//并发控制
@@ -56,7 +56,7 @@ func (user *Users) WatchWeather() {
 			res, err = GetWeatherRawData(info.CaiYunUrl)
 			if err != nil {
 				common.LogSend(info.CaiYunUrl+":发生错误:"+err.Error(), common.ErrType)
-				goto end
+				continue
 			}
 			//防止并发请求
 			time.Sleep(time.Second)
@@ -64,7 +64,7 @@ func (user *Users) WatchWeather() {
 
 			if err != nil {
 				common.LogSend(info.CaiYunUrl+":发生错误:"+err.Error(), common.ErrType)
-				goto end
+				continue
 			}
 			realtime = res.Result.Realtime
 
@@ -110,10 +110,9 @@ func (user *Users) WatchWeather() {
 				alertMsg = ""
 			}
 
-		end:
-			isTimeTo = false
-			time.Sleep(time.Minute * 1)
 		}
+		isTimeTo = false
+		time.Sleep(time.Minute * 5)
 	}
 }
 
