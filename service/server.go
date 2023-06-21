@@ -53,6 +53,8 @@ var (
 func Run() {
 	defer func() {
 		if err := recover(); err != nil {
+			stack := common.Stack(3)
+			common.Logger.Error(string(stack))
 			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
 		}
 		Run()
@@ -117,7 +119,8 @@ func Run() {
 
 			config, ok := user.ConfigGroup[v.Addr]
 			if !ok {
-				user.ConfigGroup[v.Addr] = getUrlInfo(v.Addr, v.Coordinate, v.Name, v.AllowWeek, 5, v.Switch)
+				config = getUrlInfo(v.Addr, v.Coordinate, v.Name, v.AllowWeek, 5, v.Switch)
+				user.ConfigGroup[v.Addr] = config
 			} else {
 				updateUrlInfo(config, v.Addr, v.Coordinate, v.Name, v.AllowWeek, 5)
 			}
