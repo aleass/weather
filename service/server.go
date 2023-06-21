@@ -16,42 +16,36 @@ const (
 	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
 )
 
-type UrlInfo struct {
-	Name        string `desc:"地址" json:"name" `
-	Address     string `json:"address" desc:"url 配置的地址"`
-	IsRun       bool   `desc:"是否运行" json:"is_run"`
-	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
+type Users struct {
+	Name        string `desc:"名字"`
+	ConfigGroup map[string]*BaseWeatherInfo
 }
 
-type configInfo struct {
-	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
-	Ip          string `json:"ip"`
-	Op          string `json:"op" desc:"当前操作"`
-	Adcodes     string `json:"adcodes" desc:"经纬度"`
-	AllowNight  bool   `desc:"晚上是否运行运行"`
-	Main        string `desc:"配置信息"`
-}
-
-type urlInfo struct {
-	Name      string        `desc:"名字"`
-	Notes     string        `desc:"备注"`
-	address   string        `desc:"url 配置的地址"`
-	CaiYunUrl string        `desc:"caiyun url" json:"cai_yun_url"`
-	WeChatUrl string        `desc:"wechat url" json:"we_chat_url"`
-	Switch    chan struct{} `desc:"开关" json:"__switch"`
-	IsRun     bool          `desc:"是否运行" json:"is_run"`
-	WatchTime time.Duration `desc:"监控时间:分钟" json:"watch_time"`
-	msg       strings.Builder
-	AllowWeek *[7]bool `desc:"不为空则指定星期运行"`
-	RunTime   int64    `desc:"任务创建时间"`
-	configInfo
+type BaseWeatherInfo struct {
+	Ip          string   `json:"ip"`
+	Op          string   `json:"op" desc:"当前操作"`
+	AddrCodes   string   `json:"adcodes" desc:"经纬度"`
+	AllowNight  bool     `desc:"晚上是否运行运行"`
+	Main        string   `desc:"配置信息"`
+	AllowWeek   *[7]bool `desc:"不为空则指定星期运行"`
+	StartTime   int64    `desc:"任务创建时间"`
+	Msg         strings.Builder
+	WatchTime   time.Duration `desc:"监控时间:分钟" json:"watch_time"`
+	IsRun       bool          `desc:"是否运行" json:"is_run"`
+	Name        string        `desc:"名字"`
+	Notes       string        `desc:"备注"`
+	Address     string        `desc:"url 配置的地址"`
+	CaiYunUrl   string        `desc:"caiyun url" json:"cai_yun_url"`
+	WeChatUrl   string        `desc:"wechat url" json:"we_chat_url"`
+	Switch      bool
+	IsUrlConfig bool
 }
 
 var (
 	myConfig       = common.Config{}
 	wechatNoteMap  = make(map[string]string, len(myConfig.Wechat))
 	allowUrlConfig = make(map[string]string, len(myConfig.UrlConfigPass))
-	taskMap        = map[string]*urlInfo{} //任务控制
+	taskMap        = map[string]*Users{} //任务控制
 
 )
 
@@ -111,20 +105,25 @@ func Run() {
 		}
 
 		for _, v := range myConfig.CaiYun.Addres {
-			info, ok := taskMap[v.Name]
+			user, ok := taskMap[v.Name]
 			if !ok {
-				//生成一个任务
-				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
-				taskMap[v.Name] = task
-				info = task
-			} else {
-				updateUrlInfo(info, v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
+				user = &Users{
+					Name:        v.Name,
+					ConfigGroup: map[string]*BaseWeatherInfo{},
+				}
+				taskMap[v.Name] = user
+				go user.WatchWeather() //生成一个监控任务
 			}
-			if !v.Switch && info.IsRun {
-				info.Switch <- struct{}{} //关闭一个任务
-				info.IsRun = false
-			} else if v.Switch && !info.IsRun {
-				go info.WatchWeather() //生成一个监控任务
+
+			config, ok := user.ConfigGroup[v.Addr]
+			if !ok {
+				user.ConfigGroup[v.Addr] = getUrlInfo(v.Addr, v.Coordinate, v.Name, v.AllowWeek, 5, v.Switch)
+			} else {
+				updateUrlInfo(config, v.Addr, v.Coordinate, v.Name, v.AllowWeek, 5)
+			}
+
+			if !v.Switch && config.IsRun {
+				config.IsRun = false
 			}
 		}
 		common.ErrorUrl = wechatUrl + wechatNoteMap["error"]
@@ -132,33 +131,33 @@ func Run() {
 	}
 }
 
-func updateUrlInfo(user *urlInfo, name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) {
-	user.Name = name
-	user.CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate)
-	user.WeChatUrl = wechatUrl + wechatNoteMap[wechatNotes]
-	user.WatchTime = watchTime //默认10分
-	user.Notes = wechatNotes
+func updateUrlInfo(weather *BaseWeatherInfo, addr, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) {
+	weather.Address = addr
+	weather.CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate)
+	weather.WeChatUrl = wechatUrl + wechatNoteMap[wechatNotes]
+	weather.WatchTime = watchTime //默认10分
+	weather.Notes = wechatNotes
 	if allowWeek != "" {
-		user.AllowWeek = &[7]bool{}
+		weather.AllowWeek = &[7]bool{}
 		for _, w := range strings.Split(allowWeek, ",") {
 			week, err := strconv.Atoi(w)
 			if err != nil || week < 0 || week > 6 {
 				panic("invial  week")
 			}
-			user.AllowWeek[week] = true
+			weather.AllowWeek[week] = true
 		}
 	}
 }
 
-func getUrlInfo(name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) *urlInfo {
-	user := &urlInfo{
-		Name:      name,
+func getUrlInfo(addr, coordinate, name, allowWeek string, watchTime time.Duration, _switch bool) *BaseWeatherInfo {
+	user := &BaseWeatherInfo{
+		Address:   addr,
 		CaiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
-		WeChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
-		Switch:    make(chan struct{}, 1),
+		WeChatUrl: wechatUrl + wechatNoteMap[name],
+		Switch:    _switch,
 		WatchTime: watchTime, //默认10分钟
-		Notes:     wechatNotes,
-		RunTime:   time.Now().Unix(),
+		Notes:     name,
+		StartTime: time.Now().Unix(),
 	}
 	if allowWeek != "" {
 		user.AllowWeek = &[7]bool{}
