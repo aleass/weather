@@ -9,11 +9,11 @@ type Config struct {
 	CaiYun struct {
 		Token  string `json:"token"`
 		Addres []struct {
-			Addr       string `json:"addr"`
-			Name       string `json:"name"`
-			Coordinate string `json:"coordinate"`
-			Switch     bool   `json:"switch" desc:"开关"`
-			AllowWeek  string `json:"allowWeek"`
+			Name        string `json:"name"`
+			WechatNotes string `json:"wechatNotes"`
+			Coordinate  string `json:"coordinate"`
+			Switch      bool   `json:"switch" desc:"开关"`
+			AllowWeek   string `json:"allowWeek"`
 		} `json:"addres"`
 	} `json:"caiyun"`
 
