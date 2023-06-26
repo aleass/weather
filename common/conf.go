@@ -9,7 +9,7 @@ type Config struct {
 	CaiYun struct {
 		Token  string `json:"token"`
 		Addres []struct {
-			Name        string `json:"name"`
+			Addr        string `json:"addr"`
 			WechatNotes string `json:"wechatNotes"`
 			Coordinate  string `json:"coordinate"`
 			Switch      bool   `json:"switch" desc:"开关"`

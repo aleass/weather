@@ -111,14 +111,14 @@ func Run() {
 		}
 
 		for _, v := range myConfig.CaiYun.Addres {
-			info, ok := taskMap[v.Name]
+			info, ok := taskMap[v.Addr]
 			if !ok {
 				//生成一个任务
-				task := getUrlInfo(v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
-				taskMap[v.Name] = task
+				task := getUrlInfo(v.Addr, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
+				taskMap[v.Addr] = task
 				info = task
 			} else {
-				updateUrlInfo(info, v.Name, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
+				updateUrlInfo(info, v.Addr, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
 			}
 			if !v.Switch && info.IsRun {
 				info.Switch <- struct{}{} //关闭一个任务
