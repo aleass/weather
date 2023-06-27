@@ -100,6 +100,8 @@ func Run() {
 			panic("token，任务，发送url为空")
 		}
 
+		//mysql
+		getMysql()
 		//map
 		common.SetToken(myConfig.QqMapToken, myConfig.GeoMapToken)
 

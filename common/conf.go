@@ -24,4 +24,15 @@ type Config struct {
 
 	GeoMapToken string `json:"geoMapToken"`
 	QqMapToken  string `json:"qqMapToken"`
+
+	DB struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Host     string `json:"host"`
+		DbName   string `json:"dbName"`
+	} `json:"db"`
+
+	Fund []struct {
+		Notes string `mapstructure:"note"`
+	} `json:"fund"`
 }
