@@ -23,18 +23,20 @@ var (
 	byteshowdayFormat    = []byte(`showday:`)
 )
 
+// 日收益
 func FundRun() {
 	time.Sleep(time.Second)
 	for {
 		now := time.Now()
 		if week := now.Weekday() - 1; now.Hour() == 0 && week > 0 && week < 6 {
-			DfFund()
+			getDfDayFund()
 		}
 		time.Sleep(time.Hour)
 	}
 }
 
-func DfFund() {
+// 获取数据
+func getDfDayFund() {
 	now := time.Now()
 	millisecond := now.UnixMilli()
 	url := fmt.Sprintf(dfUrl, millisecond)
@@ -64,7 +66,11 @@ func DfFund() {
 	}
 }
 
+// 数据抽取
 func extract(data, showDay []byte) {
+	if len(showDay) < 12 {
+		return
+	}
 	showDay = showDay[2:12]
 	copy(showDay[4:], showDay[5:])
 	copy(showDay[6:], showDay[7:])
@@ -77,9 +83,9 @@ func extract(data, showDay []byte) {
 		common.Logger.Error(err.Error())
 		return
 	}
-
+	//是否
 	if dfDateModel.Date > 0 {
-		//return
+		return
 	}
 
 	//检查新增的基金
@@ -97,21 +103,34 @@ func extract(data, showDay []byte) {
 		common.Logger.Error(err.Error())
 		return
 	}
-	var msgBuffer = strings.Builder{}
-	var msgBufferMinus = strings.Builder{}
-	var i, j int
-	for _, trend := range dataSlice {
+	var (
+		msgBuffer           = strings.Builder{}
+		msgBufferMinus      = strings.Builder{}
+		i, j, index         int
+		bufferDfFundEarings = make([]model.DfFundEarings, 100)
+		minusDfFundEarings  = make([]string, 10)
+	)
+
+	for _index, trend := range dataSlice {
 		if len(trend) < 18 {
 			continue
 		}
+		if _index%100 == 0 && _index > 0 {
+			db = funcDb.Create(&bufferDfFundEarings)
+			if err = db.Error; err != nil {
+				common.Logger.Error(err.Error())
+				return
+			}
+		}
+		index = _index % 100
 		models := model.DfFundEarings{
 			Date:          date,
 			Code:          trend[0],
 			Name:          trend[1],
-			UnitNV:        defaultval(trend[3]),
-			TotalNV:       defaultval(trend[4]),
-			DayIncreVal:   defaultval(trend[5]),
-			DayIncreRate:  defaultval(trend[8]),
+			UnitNV:        defaultVal(trend[3]),
+			TotalNV:       defaultVal(trend[4]),
+			DayIncreVal:   defaultVal(trend[7]),
+			DayIncreRate:  defaultVal(trend[8]),
 			BuyStatus:     trend[9],
 			SellStatus:    trend[10],
 			ServiceCharge: "0",
@@ -119,12 +138,7 @@ func extract(data, showDay []byte) {
 		if len(trend[18]) > 0 {
 			models.ServiceCharge = trend[18][:len(trend[18])-1]
 		}
-
-		//db = funcDb.Create(&models)
-		//if err = db.Error; err != nil {
-		//	common.Logger.Error(err.Error())
-		//	return
-		//}
+		bufferDfFundEarings[index] = models
 
 		if _, ok := codeMap[models.Code]; !ok {
 			df = append(df, model.DfFund{
@@ -133,30 +147,38 @@ func extract(data, showDay []byte) {
 				Date:   date,
 				Pinyin: trend[2],
 			})
+			//codeMap[models.Code] = struct{}{}
 		}
-		if models.BuyStatus != "开放申购" || models.UnitNV == models.TotalNV {
+		if models.BuyStatus != "开放申购" {
 			continue
 		}
 		f, _ := strconv.ParseFloat(models.DayIncreRate, 64)
+
 		if f >= 0.1 {
 			i++
+			if i > 10 {
+				continue
+			}
 			msgBuffer.WriteString(fmt.Sprintf("%s %s  涨率:%s 涨值:%s\r\n", models.Code, models.Name, models.DayIncreRate, models.DayIncreVal))
 		}
 		if f <= -0.1 {
+			minusDfFundEarings[j%10] = fmt.Sprintf("%s %s  涨率:%s 涨值:%s\r\n", models.Code, models.Name, models.DayIncreRate, models.DayIncreVal)
 			j++
-			msgBufferMinus.WriteString(fmt.Sprintf("%s %s  涨率:%s 涨值:%s\r\n", models.Code, models.Name, models.DayIncreRate, models.DayIncreVal))
 		}
-
 	}
-	//插入更新的日期
-	//dfDateModel.Date = date
-	//db = funcDb.Create(dfDateModel)
-	//if err = db.Error; err != nil {
-	//	common.Logger.Error(err.Error())
-	//	return
-	//}
 
-	println(i, j)
+	for _, str := range minusDfFundEarings {
+		msgBufferMinus.WriteString(str)
+	}
+
+	//插入更新的日期
+	dfDateModel.Date = date
+	db = funcDb.Create(dfDateModel)
+	if err = db.Error; err != nil {
+		common.Logger.Error(err.Error())
+		return
+	}
+
 	//新增基金
 	if len(df) > 0 {
 		db = funcDb.Create(df)
@@ -168,18 +190,19 @@ func extract(data, showDay []byte) {
 
 	if str := msgBuffer.String(); str != "" {
 		for _, note := range myConfig.Fund {
-			common.Send(str, wechatUrl+wechatNoteMap[note.Notes])
+			common.Send(fmt.Sprintf("日增率>= 0.1: %d个\r\n", i)+str, wechatUrl+wechatNoteMap[note.Notes])
 		}
 	}
 
 	if str := msgBufferMinus.String(); str != "" {
 		for _, note := range myConfig.Fund {
-			common.Send(str, wechatUrl+wechatNoteMap[note.Notes])
+			common.Send(fmt.Sprintf("日增率<= -0.1:%d个\n", j)+str, wechatUrl+wechatNoteMap[note.Notes])
 		}
 	}
 
 }
-func defaultval(val string) string {
+
+func defaultVal(val string) string {
 	if val == "" {
 		return "0"
 	}
