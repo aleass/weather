@@ -48,12 +48,16 @@ type urlInfo struct {
 }
 
 var (
-	myConfig       = common.Config{}
-	wechatNoteMap  = make(map[string]string, len(myConfig.Wechat))
-	allowUrlConfig = make(map[string]string, len(myConfig.UrlConfigPass))
+	MyConfig       = common.Config{}
+	wechatNoteMap  = make(map[string]string, len(MyConfig.Wechat))
+	allowUrlConfig = make(map[string]string, len(MyConfig.UrlConfigPass))
 	taskMap        = map[string]*urlInfo{} //任务控制
 
 )
+
+func GetWechatUrl(note string) string {
+	return wechatUrl + wechatNoteMap[note]
+}
 
 // 运行
 func Run() {
@@ -92,27 +96,27 @@ func Run() {
 			panic(fmt.Errorf("无法读取配置文件: %w", err))
 		}
 
-		if err = vip.Unmarshal(&myConfig); err != nil {
+		if err = vip.Unmarshal(&MyConfig); err != nil {
 			panic(fmt.Errorf("无法解析配置文件: %w", err))
 		}
 
-		if len(myConfig.CaiYun.Token) == 0 || len(myConfig.CaiYun.Addres) == 0 || len(myConfig.Wechat) == 0 {
+		if len(MyConfig.CaiYun.Token) == 0 || len(MyConfig.CaiYun.Addres) == 0 || len(MyConfig.Wechat) == 0 {
 			panic("token，任务，发送url为空")
 		}
 
 		//mysql
-		getMysql()
+		InitMysql()
 		//map
-		common.SetToken(myConfig.QqMapToken, myConfig.GeoMapToken)
+		common.SetToken(MyConfig.QqMapToken, MyConfig.GeoMapToken)
 
-		for _, v := range myConfig.Wechat {
+		for _, v := range MyConfig.Wechat {
 			wechatNoteMap[v.Notes] = v.Token
 		}
-		for _, v := range myConfig.UrlConfigPass {
+		for _, v := range MyConfig.UrlConfigPass {
 			allowUrlConfig[v.Name] = v.Notes
 		}
 
-		for _, v := range myConfig.CaiYun.Addres {
+		for _, v := range MyConfig.CaiYun.Addres {
 			info, ok := taskMap[v.Addr]
 			if !ok {
 				//生成一个任务
@@ -136,7 +140,7 @@ func Run() {
 
 func updateUrlInfo(user *urlInfo, name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) {
 	user.Name = name
-	user.CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate)
+	user.CaiYunUrl = fmt.Sprintf(caiYunUrl, MyConfig.CaiYun.Token, coordinate)
 	user.WeChatUrl = wechatUrl + wechatNoteMap[wechatNotes]
 	user.WatchTime = watchTime //默认10分
 	user.Notes = wechatNotes
@@ -155,7 +159,7 @@ func updateUrlInfo(user *urlInfo, name, coordinate, wechatNotes, allowWeek strin
 func getUrlInfo(name, coordinate, wechatNotes, allowWeek string, watchTime time.Duration) *urlInfo {
 	user := &urlInfo{
 		Name:      name,
-		CaiYunUrl: fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, coordinate),
+		CaiYunUrl: fmt.Sprintf(caiYunUrl, MyConfig.CaiYun.Token, coordinate),
 		WeChatUrl: wechatUrl + wechatNoteMap[wechatNotes],
 		Switch:    make(chan struct{}, 1),
 		WatchTime: watchTime, //默认10分钟

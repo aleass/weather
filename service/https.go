@@ -136,7 +136,7 @@ start:
 		go info.WatchWeather()
 	} else {
 		op = "edit"
-		taskMap[name].CaiYunUrl = fmt.Sprintf(caiYunUrl, myConfig.CaiYun.Token, adcodes)
+		taskMap[name].CaiYunUrl = fmt.Sprintf(caiYunUrl, MyConfig.CaiYun.Token, adcodes)
 		if !info.IsRun { //启动
 			go info.WatchWeather()
 		}

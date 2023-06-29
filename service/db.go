@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"os"
+	"time"
 	"weather/common"
 )
 
-var funcDb *gorm.DB
+var FuncDb *gorm.DB
 
-func getMysql() {
-	if funcDb != nil {
+func InitMysql() {
+	if FuncDb != nil {
 		return
 	}
-	config := myConfig.DB
+	config := MyConfig.DB
 	dsn := fmt.Sprintf(
 		"%s:%s@%s(%s)/%s?charset=%s&multiStatements=true&parseTime=True&loc=Local",
 		config.User,
@@ -23,12 +27,18 @@ func getMysql() {
 		config.DbName,
 		"utf8mb4",
 	)
-
-	var (
-		err error
+	var err error
+	level := logger.Info
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Millisecond * 300, // 慢 SQL 阈值
+			LogLevel:                  level,                  // 日志级别
+			IgnoreRecordNotFoundError: true,                   // 忽略ErrRecordNotFound（记录未找到）错误
+			Colorful:                  false,                  // 禁用彩色打印
+		},
 	)
-
-	funcDb, err = gorm.Open(mysql.Open(dsn))
+	FuncDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
 	if err != nil {
 		panic("mysql 启动失败!,原因:" + err.Error())
 	}
