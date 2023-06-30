@@ -22,7 +22,11 @@ var (
 	JG5Pjrq         = []byte("JG_5_pjrq = \"") //济安金信
 )
 
-func getStar(star []byte) string {
+type fundStar struct {
+	data []byte
+}
+
+func (f *fundStar) getStar(star []byte) string {
 	if len(star) == 0 {
 		return ""
 	}
@@ -40,7 +44,7 @@ func getStar(star []byte) string {
 	}
 }
 
-func GetStarData() {
+func (f *fundStar) GetData() {
 	res, err := http.Get(starUrl)
 	if err != nil {
 		common.Logger.Error(err.Error())
@@ -107,13 +111,13 @@ func GetStarData() {
 		}
 	}
 
-	startExtract(raw[i1:i2], ZhaoShangDate, ShanghaiDate, JiananDate, codeMap)
+	f.startExtract(raw[i1:i2], ZhaoShangDate, ShanghaiDate, JiananDate, codeMap)
 }
 
-func startExtract(data []byte, ZhaoShangDate, ShanghaiDate, JiananDate string, fundCodeMap map[string]int64) {
+func (f *fundStar) startExtract(data []byte, ZhaoShangDate, ShanghaiDate, JiananDate string, fundCodeMap map[string]int64) {
 	fundList := bytes.Split(data, []byte("_"))
-	bufferDfFundEarings := make([]model.DfFundStar, 0, 100)
-	updateDfFundEarings := make([]model.DfFundStar, 0, 100)
+	bufferDfFundEarnings := make([]model.DfFundStar, 0, 100)
+	updateDfFundEarnings := make([]model.DfFundStar, 0, 100)
 	now := time.Now()
 	for _, fund := range fundList {
 		info := bytes.Split(fund, []byte("|"))
@@ -126,54 +130,55 @@ func startExtract(data []byte, ZhaoShangDate, ShanghaiDate, JiananDate string, f
 		}
 
 		//buff full
-		if len(bufferDfFundEarings) > 100 {
-			db := service.FuncDb.Create(&bufferDfFundEarings)
+		if len(bufferDfFundEarnings) > 100 {
+			db := service.FuncDb.Create(&bufferDfFundEarnings)
 			if err := db.Error; err != nil {
 				common.Logger.Error(err.Error())
 				return
 			}
-			bufferDfFundEarings = bufferDfFundEarings[:0]
+			bufferDfFundEarnings = bufferDfFundEarnings[:0]
 		}
 		models := model.DfFundStar{
 			Code:                       string(info[0]),
 			JiananJinxinSecuritiesDate: JiananDate,
-			JiananJinxinTrend:          starHandler(info[17]),
+			JiananJinxinTrend:          f.starHandler(info[17]),
 			Name:                       string(info[1]),
 			ShanghaiSecuritiesDate:     ShanghaiDate,
-			ShanghaiSecuritiesTrend:    starHandler(info[13]),
+			ShanghaiSecuritiesTrend:    f.starHandler(info[13]),
 			UpdateTime:                 now,
 			ZhaoShangSecuritiesDate:    ZhaoShangDate,
-			ZhaoShangSecuritiesTrend:   starHandler(info[11]),
-			JiananJinxinStar:           getStar(info[16]),
-			ZhaoShangSecuritiesStar:    getStar(info[10]),
-			ShanghaiSecuritiesStar:     getStar(info[12]),
+			ZhaoShangSecuritiesTrend:   f.starHandler(info[11]),
+			JiananJinxinStar:           f.getStar(info[16]),
+			ZhaoShangSecuritiesStar:    f.getStar(info[10]),
+			ShanghaiSecuritiesStar:     f.getStar(info[12]),
 		}
 
 		//更新
 		if id, ok := fundCodeMap[models.Code]; ok {
 			models.Id = id
-			updateDfFundEarings = append(updateDfFundEarings, models)
+			updateDfFundEarnings = append(updateDfFundEarnings, models)
 			continue
 		}
 
-		bufferDfFundEarings = append(bufferDfFundEarings, models)
+		bufferDfFundEarnings = append(bufferDfFundEarnings, models)
 	}
 
-	if len(bufferDfFundEarings) != 0 {
-		db := service.FuncDb.Create(&bufferDfFundEarings)
+	if len(bufferDfFundEarnings) != 0 {
+		db := service.FuncDb.Create(&bufferDfFundEarnings)
 		if err := db.Error; err != nil {
 			common.Logger.Error(err.Error())
 			return
 		}
 	}
 
-	if len(updateDfFundEarings) > 0 {
-		service.FuncDb.Save(updateDfFundEarings)
+	if len(updateDfFundEarnings) > 0 {
+		service.FuncDb.Save(updateDfFundEarnings)
 	}
+	f.data = f.data[:0]
 
 }
 
-func starHandler(_range []byte) string {
+func (f *fundStar) starHandler(_range []byte) string {
 	if len(_range) == 0 {
 		return ""
 	}

@@ -17,7 +17,7 @@ func InitMysql() {
 	if FuncDb != nil {
 		return
 	}
-	config := MyConfig.DB2
+	config := MyConfig.DB
 	dsn := fmt.Sprintf(
 		"%s:%s@%s(%s:%s)/%s?charset=%s&multiStatements=true&parseTime=True&loc=Local",
 		config.User,

@@ -7,24 +7,34 @@ import (
 
 // 定时
 func InitCron() {
-	var c = gocron.Scheduler{}
+	list := fundList{}
+	star := fundStar{}
+	day := fundDayEarnings{}
+	earnings := fundEarnings{}
+
 	timezone, _ := time.LoadLocation("Asia/Shanghai")
-	gocron.NewScheduler(timezone)
+	c := gocron.NewScheduler(timezone)
 
-	//日
-	_, err := c.Cron("0 0 * * 1-5").Do(fundDayEarings)
+	//日收益 0点
+	_, err := c.Cron("0 0 * * 1-5").Do(day.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
-	//star
-	_, err = c.Cron("0 0 1 * *").Do(GetStarData)
+	//star 每个月
+	_, err = c.Cron("0 0 1 * *").Do(star.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
-	//earing
-	_, err = c.Every(1).Sunday().Do(GetEaringsReq)
+	//list 每个月
+	_, err = c.Cron("0 0 1 * *").Do(list.GetData)
+	if err != nil {
+		panic("cron err :" + err.Error())
+	}
+
+	//earing 每周
+	_, err = c.Every(1).Sunday().Do(earnings.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
