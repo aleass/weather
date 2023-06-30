@@ -30,6 +30,7 @@ type Config struct {
 		Password string `json:"password"`
 		Host     string `json:"host"`
 		DbName   string `json:"dbName"`
+		Port     string `json:"port"`
 	} `json:"db"`
 
 	Fund []struct {

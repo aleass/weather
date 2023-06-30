@@ -17,13 +17,14 @@ func InitMysql() {
 	if FuncDb != nil {
 		return
 	}
-	config := MyConfig.DB
+	config := MyConfig.DB2
 	dsn := fmt.Sprintf(
-		"%s:%s@%s(%s)/%s?charset=%s&multiStatements=true&parseTime=True&loc=Local",
+		"%s:%s@%s(%s:%s)/%s?charset=%s&multiStatements=true&parseTime=True&loc=Local",
 		config.User,
 		config.Password,
 		"tcp",
 		config.Host,
+		config.Port,
 		config.DbName,
 		"utf8mb4",
 	)
