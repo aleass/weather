@@ -26,24 +26,6 @@ type fundStar struct {
 	data []byte
 }
 
-func (f *fundStar) getStar(star []byte) string {
-	if len(star) == 0 {
-		return ""
-	}
-	switch star[0] {
-	case '1':
-		return "★"
-	case '2':
-		return "★★"
-	case '3':
-		return "★★★"
-	case '4':
-		return "★★★★"
-	default:
-		return "★★★★★"
-	}
-}
-
 func (f *fundStar) GetData() {
 	res, err := http.Get(starUrl)
 	if err != nil {
@@ -148,9 +130,9 @@ func (f *fundStar) startExtract(data []byte, ZhaoShangDate, ShanghaiDate, Jianan
 			UpdateTime:                 now,
 			ZhaoShangSecuritiesDate:    ZhaoShangDate,
 			ZhaoShangSecuritiesTrend:   f.starHandler(info[11]),
-			JiananJinxinStar:           f.getStar(info[16]),
-			ZhaoShangSecuritiesStar:    f.getStar(info[10]),
-			ShanghaiSecuritiesStar:     f.getStar(info[12]),
+			JiananJinxinStar:           defaultVal(string(info[16])),
+			ZhaoShangSecuritiesStar:    defaultVal(string(info[10])),
+			ShanghaiSecuritiesStar:     defaultVal(string(info[12])),
 		}
 
 		//更新
