@@ -29,7 +29,7 @@ func InitMysql() {
 		"utf8mb4",
 	)
 	var err error
-	level := logger.Info
+	level := logger.Warn
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{

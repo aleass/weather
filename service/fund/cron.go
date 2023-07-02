@@ -11,12 +11,18 @@ func InitCron() {
 	star := fundStar{}
 	day := fundDayEarnings{}
 	earnings := fundEarnings{}
-
+	earningsRank := FundEaringsRank{}
 	timezone, _ := time.LoadLocation("Asia/Shanghai")
 	c := gocron.NewScheduler(timezone)
 
 	//日收益 0点
-	_, err := c.Cron("0 0 * * 1-5").Do(day.GetData)
+	_, err := c.Cron("0 0 * * 2-6").Do(day.GetData)
+	if err != nil {
+		panic("cron err :" + err.Error())
+	}
+
+	//排行榜 0点
+	_, err = c.Cron("0 0 * * 2-6").Do(earningsRank.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
