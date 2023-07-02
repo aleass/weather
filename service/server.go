@@ -43,6 +43,7 @@ type urlInfo struct {
 	WatchTime time.Duration `desc:"监控时间:分钟" json:"watch_time"`
 	msg       strings.Builder
 	AllowWeek *[7]bool `desc:"不为空则指定星期运行"`
+	isEdit    bool     `desc:"发送了修改"`
 	RunTime   int64    `desc:"任务创建时间"`
 	configInfo
 }

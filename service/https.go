@@ -74,7 +74,6 @@ func UserHandler(context *gin.Context) {
 		adcodes, addr, main string
 		err                 error
 	)
-	ip = "43.138.231.123"
 	info, ok := taskMap[name]
 	if op == "del" {
 		//任务退出
@@ -136,7 +135,8 @@ start:
 		go info.WatchWeather()
 	} else {
 		op = "edit"
-		taskMap[name].CaiYunUrl = fmt.Sprintf(caiYunUrl, MyConfig.CaiYun.Token, adcodes)
+		info.isEdit = true //发生了变化发送一次
+		info.CaiYunUrl = fmt.Sprintf(caiYunUrl, MyConfig.CaiYun.Token, adcodes)
 		if !info.IsRun { //启动
 			go info.WatchWeather()
 		}

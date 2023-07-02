@@ -103,25 +103,12 @@ func (info *urlInfo) WatchWeather() {
 		}
 
 		//发送大于6小时才发生 天气发生变化 预警变更(取消或新增,修改)
-		if isTimeTo && now.Hour() != lastDate || _weatherMsg != SkyconStatus[realtime.Skycon] || alertMsg != _alertMsg {
+		if info.isEdit || isTimeTo && now.Hour() != lastDate || _weatherMsg != SkyconStatus[realtime.Skycon] || alertMsg != _alertMsg {
 			//发送
 			common.Send(fmt.Sprintf(msg, now.Format("15:04:05 "), info.Name+info.address, SkyconStatus[realtime.Skycon],
 				realtime.Temperature, realtime.LifeIndex.Comfort.Desc, rainMsg, realtime.LifeIndex.Ultraviolet.Desc,
 				realtime.AirQuality.Description.Chn, realtime.AirQuality.Aqi.Chn, realtime.Humidity*100, windMsg,
 				realtime.ApparentTemperature, res.Result.Hourly.Description)+alertMsg, info.WeChatUrl)
-
-			//switch {
-			//case isTimeTo && now.Hour() != lastDate:
-			//	common.Logger.Info(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
-			//	println(fmt.Sprintf("isTimeTo:%v,Hour:%d,lastDate:%d", isTimeTo, now.Hour(), lastDate))
-			//case _weatherMsg != SkyconStatus[realtime.Skycon]:
-			//	common.Logger.Info(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
-			//	println(fmt.Sprintf("_weatherMsg:%s,SkyconStatus:%s", _weatherMsg, SkyconStatus[realtime.Skycon]))
-			//case alertMsg != _alertMsg:
-			//	common.Logger.Info(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
-			//	println(fmt.Sprintf("alertMsg:%s,_alertMsg:%s", alertMsg, _alertMsg))
-			//}
-
 			//记录这次发送时间和信息
 			lastDate = now.Hour()
 			_weatherMsg = SkyconStatus[realtime.Skycon]
