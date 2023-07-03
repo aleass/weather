@@ -1,10 +1,10 @@
 package fund
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 	"weather/common"
 	"weather/model"
@@ -12,12 +12,22 @@ import (
 )
 
 const (
-	totalEaringsUrl = "http://api.fund.eastmoney.com/f10/FundLJSYLZS/?bzdm=%s&dt=month"             //dt=单位，all全部
-	rankUrl         = "http://api.fund.eastmoney.com/f10/FundTLPM/?bzdm=%s&dt=month&rt=threemonth"  //dt=单位，all全部
-	precentRankUrl  = "http://api.fund.eastmoney.com/f10/FundBFBPM/?bzdm=%s&dt=month&rt=threemonth" //dt=单位，all全部
-	async           = 5
+	totalEarningsUrl = "https://api.fund.eastmoney.com/pinzhong/LJSYLZS?fundCode=%s&type=se&indexcode=000300" //dt=单位，m 1月 ,se 成立来
+	rankUrl          = "https://fund.eastmoney.com/pingzhongdata/%s.js"
+	async            = 5
 )
 
+var (
+	dataRateInSimilarType    = []byte(`var Data_rateInSimilarType = `)  /*同类排名走势*/
+	dataRateInSimilarPersent = []byte(`var Data_rateInSimilarPersent=`) /*同类排名百分比*/
+)
+
+type rank struct {
+	X  int64  `json:"x"`
+	Y  int    `json:"y"`
+	Sc string `json:"sc"`
+}
+type rankPrecent [][]float64
 type FundEaringsRank struct {
 }
 
@@ -27,12 +37,12 @@ type equ struct {
 }
 
 func (f *FundEaringsRank) GetData() {
-	var earingsRankMode []model.FundEaringsRank
+	var earningsRankMode []model.FundEaringsRank
 	months := time.Now().AddDate(0, -2, 0).Format("20060102")
-	service.FuncDb.Select("date,code").Model(&model.FundEaringsRank{}).Where("date >= ?", months).Find(&earingsRankMode)
-	earingsRankMap := make(map[equ]struct{}, len(earingsRankMode))
-	for _, data := range earingsRankMode {
-		earingsRankMap[equ{data.Date, data.Code}] = struct{}{}
+	service.FuncDb.Select("date,code").Model(&model.FundEaringsRank{}).Where("date >= ?", months).Find(&earningsRankMode)
+	earningsRankMap := make(map[equ]struct{}, len(earningsRankMode))
+	for _, data := range earningsRankMode {
+		earningsRankMap[equ{data.Date, data.Code}] = struct{}{}
 	}
 	codes := make(chan [2]string, 1000)
 
@@ -42,20 +52,29 @@ func (f *FundEaringsRank) GetData() {
 	//
 	var closeChan = make(chan struct{}, async)
 	for i := 0; i < async; i++ {
-		go f.getEaringsRankUrlData(codes, closeChan, &earingsRankMap)
+		go f.getEaringsRankUrlData(codes, closeChan, &earningsRankMap)
 	}
 
 	for _, fund := range df {
 		codes <- [2]string{fund.Code, fund.Name}
 	}
+	//codes <- [2]string{`006011`, `中信保诚稳鸿A`}
 	close(codes)
 	for i := 0; i < async; i++ {
 		<-closeChan
 	}
+	close(closeChan)
 }
 
 type EaringsRankRes struct {
 	Data string `json:"Data"`
+}
+
+type totalEarnings struct {
+	Data []struct {
+		Data [][]float64 `json:"data"`
+		Name string      `json:"name"`
+	} `json:"Data"`
 }
 
 func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan chan struct{}, earingsRankMap *map[equ]struct{}) {
@@ -66,8 +85,8 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 	//默认值
 	defVal := model.FundEaringsRank{
-		Rank:        "0",
-		RankPrecent: "0",
+		Rank:        0,
+		RankPrecent: 0,
 		TotalRate:   "0",
 		KindAvgRate: "0",
 	}
@@ -81,72 +100,93 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 		println(code, name)
 		//不做并发
-		totalEaringStr := f.GetUrlData(code, fmt.Sprintf(totalEaringsUrl, code), refer, earingsRankMap)
-		if len(totalEaringStr) == 0 {
-			continue
+		raw := f.GetUrlData(common.PostType, fmt.Sprintf(totalEarningsUrl, code), refer)
+		earnings := &totalEarnings{}
+		json.Unmarshal(raw, earnings)
+		if len(earnings.Data) < 2 {
+			return
 		}
-		for _, str := range totalEaringStr {
-			info := strings.Split(str, "_")
-			if len(info) < 3 {
-				goto end1
-			}
-			date := strings.ReplaceAll(info[0], "/", "")
+		fundData := earnings.Data[0]
+		unix := fundData.Data[len(fundData.Data)-1][0]
+		date := time.Unix(int64(unix)/1000, 0)
+		if _, ok := (*earingsRankMap)[equ{date: date.Format("20060102"), code: code}]; ok {
+			goto total
+		}
+
+		for _, datum := range earnings.Data[0].Data {
+			_date := time.Unix(int64(datum[0])/1000, 0).Format("20060102")
 			_model := defVal
 			_model.Name = name
 			_model.Code = code
-			_model.Date = date
-			_model.TotalRate = defaultVal(info[2])
-			_model.KindAvgRate = defaultVal(info[1])
-
+			_model.Date = _date
+			_model.TotalRate = fmt.Sprintf("%f", datum[1])
 			list = append(list, &_model)
-			modelMap[date] = &_model
+			modelMap[_date] = &_model
 		}
-	end1:
-		rankStr := f.GetUrlData(code, fmt.Sprintf(rankUrl, code), refer, earingsRankMap)
-		for _, str := range rankStr {
-			info := strings.Split(str, "_")
-			if len(info) < 2 {
-				goto end2
+
+		//avg
+		for _, datum := range earnings.Data[1].Data {
+			_date := time.Unix(int64(datum[0])/1000, 0).Format("20060102")
+			if val, ok := modelMap[_date]; !ok {
+				_model := defVal
+				_model.Name = name
+				_model.Code = code
+				_model.Date = _date
+				_model.TotalRate = fmt.Sprintf("%f", datum[1])
+				list = append(list, &_model)
+				modelMap[_date] = &_model
+			} else {
+				val.KindAvgRate = fmt.Sprintf("%f", datum[1])
 			}
-			date := strings.ReplaceAll(info[0], "/", "")
+		}
+
+	total:
+		raw = f.GetUrlData(http.MethodGet, fmt.Sprintf(rankUrl, code), refer)
+		var grandTotal = f.extract2(raw, dataRateInSimilarType, []byte{';'})
+		var tempData = []rank{}
+		if grandTotal == nil {
+			goto avg
+		}
+		json.Unmarshal(grandTotal, &tempData)
+
+		for _, str := range tempData {
+			date := time.Unix(str.X/1000, 0).Format("20060102")
 			if val, ok := modelMap[date]; !ok {
 				_model := defVal
 				_model.Name = name
 				_model.Code = code
 				_model.Date = date
-				_model.Rank = defaultVal(info[1])
-
+				_model.Rank = str.Y
 				list = append(list, &_model)
 				modelMap[date] = &_model
-				continue
 			} else {
-				val.Rank = defaultVal(info[1])
+				val.Rank = str.Y
 			}
 		}
-	end2:
 
-		rankPrecentStr := f.GetUrlData(code, fmt.Sprintf(precentRankUrl, code), refer, earingsRankMap)
-		for _, str := range rankPrecentStr {
-			info := strings.Split(str, "_")
-			if len(info) < 2 {
-				goto end3
-			}
-			date := strings.ReplaceAll(info[0], "/", "")
-			if val, ok := modelMap[date]; !ok {
+	avg:
+		grandTotal = f.extract2(raw, dataRateInSimilarPersent, []byte{';'})
+		var tempData2 = rankPrecent{}
+		if grandTotal == nil {
+			goto end
+		}
+		json.Unmarshal(grandTotal, &tempData2)
+		for _, _rankPre := range tempData2 {
+			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format("20060102")
+			if val, ok := modelMap[_date]; !ok {
 				_model := defVal
 				_model.Name = name
 				_model.Code = code
-				_model.Date = date
-				_model.RankPrecent = defaultVal(info[1])
-
+				_model.Date = _date
+				_model.RankPrecent = _rankPre[1]
 				list = append(list, &_model)
-				modelMap[date] = &_model
-				continue
+				modelMap[_date] = &_model
 			} else {
-				val.RankPrecent = defaultVal(info[1])
+				val.RankPrecent = _rankPre[1]
 			}
 		}
-	end3:
+
+	end:
 		if len(list) > 0 {
 			service.FuncDb.CreateInBatches(list, 50)
 			modelMap = make(map[string]*model.FundEaringsRank, 500)
@@ -155,39 +195,21 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 	}
 	closeChan <- struct{}{}
 }
+func (f *FundEaringsRank) extract2(data []byte, startStr, endStr []byte) []byte {
+	if index := bytes.Index(data, startStr); index != -1 {
+		data = data[len(startStr)+index:]
+		if index = bytes.Index(data, endStr); index != -1 {
+			return data[:index]
+		}
+	}
+	return nil
+}
 
-func (f *FundEaringsRank) GetUrlData(code, url string, refer [][2]string, earingsRankMap *map[equ]struct{}) []string {
-	res, err := common.HttpRequest(http.MethodPost, url, nil, refer)
+func (f *FundEaringsRank) GetUrlData(_type common.HttpMethod, url string, refer [][2]string) []byte {
+	res, err := common.HttpRequest(_type, url, nil, refer)
 	if err != nil {
 		common.Logger.Error(err.Error())
 		return nil
 	}
-	data := &EaringsRankRes{}
-	json.Unmarshal(res, data)
-	return f.extract(code, data.Data, earingsRankMap)
-}
-
-type sortMap struct {
-	info map[string]string
-	list []string
-}
-
-func (f *FundEaringsRank) extract(code, data string, earingsRankMap *map[equ]struct{}) []string {
-	dateList := strings.Split(data, "|")
-	//2016/10/21_17.3500
-	info := strings.Split(dateList[len(dateList)-1], "_")
-	lastDate := strings.ReplaceAll(info[0], "/", "")
-	if _, ok := (*earingsRankMap)[equ{date: lastDate, code: code}]; ok {
-		return nil
-	}
-	//var maps = sortMap{
-	//	make(map[string]string,len(dateList)),
-	//	make([]string,len(dateList)),
-	//}
-	//for _, d := range dateList {
-	//
-	//}
-	//
-
-	return dateList
+	return res
 }

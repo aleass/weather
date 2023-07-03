@@ -9,3 +9,10 @@ func Str2Int64(val string) int64 {
 	num, _ := strconv.Atoi(val)
 	return int64(num)
 }
+
+func Int642Str(val int64) string {
+	if val == 0 {
+		return ""
+	}
+	return strconv.Itoa(int(val))
+}
