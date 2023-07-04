@@ -18,8 +18,15 @@ const (
 )
 
 var (
-	dataRateInSimilarType    = []byte(`var Data_rateInSimilarType = `)  /*同类排名走势*/
-	dataRateInSimilarPersent = []byte(`var Data_rateInSimilarPersent=`) /*同类排名百分比*/
+	dataRateInSimilarType    = []byte(`Data_rateInSimilarType = `)  //同类排名走势
+	dataRateInSimilarPersent = []byte(`Data_rateInSimilarPersent=`) //同类排名百分比
+	unitNV                   = []byte(`Data_netWorthTrend = `)      //同类排名百分比
+	totalNV                  = []byte(`Data_ACWorthTrend = `)       //累计净值
+	//收益率
+	syl1n = []byte(`syl_1n="`) //近一年收益率
+	syl6y = []byte(`syl_6y="`) //近6月收益率
+	syl3y = []byte(`syl_3y="`) //近三月收益率
+	syl1y = []byte(`syl_1y="`) //近一月收益率
 )
 
 type rank struct {
@@ -31,39 +38,55 @@ type rankPrecent [][]float64
 type FundEaringsRank struct {
 }
 
+type unitNVData struct {
+	X int64   `json:"x"`
+	Y float64 `json:"y"`
+	//EquityReturn float64 `json:"equityReturn"` //净值回报
+	//UnitMoney    string  `json:"unitMoney"` // 每份派送金
+}
+
 type equ struct {
 	date string
 	code string
 }
 
 func (f *FundEaringsRank) GetData() {
-	var earningsRankMode []model.FundEaringsRank
+	var earningsRankMode []model.DfFundEarningsRank
 	months := time.Now().AddDate(0, -2, 0).Format("20060102")
-	service.FuncDb.Select("date,code").Model(&model.FundEaringsRank{}).Where("date >= ?", months).Find(&earningsRankMode)
+	service.FuncDb.Select("date,code").Model(&model.DfFundEarningsRank{}).Where("date >= ?", months).Find(&earningsRankMode)
 	earningsRankMap := make(map[equ]struct{}, len(earningsRankMode))
 	for _, data := range earningsRankMode {
 		earningsRankMap[equ{data.Date, data.Code}] = struct{}{}
 	}
+
+	//收益率
+	var dfEarningsMode []model.DfFundEarnings
+	earningsMap := make(map[string]*model.DfFundEarnings, len(earningsRankMode))
+	service.FuncDb.Select("id,code").Model(&model.DfFundEarnings{}).Find(&dfEarningsMode)
+	for i, data := range dfEarningsMode {
+		earningsMap[data.Code] = &dfEarningsMode[i]
+	}
+
 	codes := make(chan [2]string, 1000)
 
 	var df []model.DfFundList
-	service.FuncDb.Model(&model.DfFundList{}).Where("`type` LIKE '债券型-%'").Find(&df)
+	service.FuncDb.Model(&model.DfFundList{}).Where("`type` LIKE '债券型%'").Find(&df)
 
-	//
 	var closeChan = make(chan struct{}, async)
 	for i := 0; i < async; i++ {
-		go f.getEaringsRankUrlData(codes, closeChan, &earningsRankMap)
+		go f.getEaringsRankUrlData(codes, closeChan, &earningsRankMap, &earningsMap)
 	}
 
 	for _, fund := range df {
 		codes <- [2]string{fund.Code, fund.Name}
 	}
-	//codes <- [2]string{`006011`, `中信保诚稳鸿A`}
 	close(codes)
 	for i := 0; i < async; i++ {
 		<-closeChan
 	}
+
 	close(closeChan)
+	println("end")
 }
 
 type EaringsRankRes struct {
@@ -77,42 +100,42 @@ type totalEarnings struct {
 	} `json:"Data"`
 }
 
-func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan chan struct{}, earingsRankMap *map[equ]struct{}) {
+func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan chan struct{}, earingsRankMap *map[equ]struct{}, earningsMap *map[string]*model.DfFundEarnings) {
 	refer := [][2]string{
 		{"Referer", "http://fundf10.eastmoney.com/"},
 		{"Host", "api.fund.eastmoney.com"},
 	}
 
 	//默认值
-	defVal := model.FundEaringsRank{
+	defVal := model.DfFundEarningsRank{
 		Rank:        0,
 		RankPrecent: 0,
 		TotalRate:   "0",
 		KindAvgRate: "0",
 	}
 
-	var modelMap = make(map[string]*model.FundEaringsRank, 500)
-	var list = make([]*model.FundEaringsRank, 0, 500)
+	var modelMap = make(map[string]*model.DfFundEarningsRank, 500)
+	var list = make([]*model.DfFundEarningsRank, 0, 500)
+	now := time.Now()
 	for data := range codes {
 		code := data[0]
 		name := data[1]
 		defVal.CreateTime = time.Now()
 
-		println(code, name)
 		//不做并发
 		raw := f.GetUrlData(common.PostType, fmt.Sprintf(totalEarningsUrl, code), refer)
 		earnings := &totalEarnings{}
 		json.Unmarshal(raw, earnings)
 		if len(earnings.Data) < 2 {
-			return
+			continue
 		}
 		fundData := earnings.Data[0]
 		unix := fundData.Data[len(fundData.Data)-1][0]
 		date := time.Unix(int64(unix)/1000, 0)
 		if _, ok := (*earingsRankMap)[equ{date: date.Format("20060102"), code: code}]; ok {
-			goto total
+			continue
 		}
-
+		//累计
 		for _, datum := range earnings.Data[0].Data {
 			_date := time.Unix(int64(datum[0])/1000, 0).Format("20060102")
 			_model := defVal
@@ -124,7 +147,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 			modelMap[_date] = &_model
 		}
 
-		//avg
+		//平均
 		for _, datum := range earnings.Data[1].Data {
 			_date := time.Unix(int64(datum[0])/1000, 0).Format("20060102")
 			if val, ok := modelMap[_date]; !ok {
@@ -140,8 +163,63 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 			}
 		}
 
-	total:
+		//详情数据
 		raw = f.GetUrlData(http.MethodGet, fmt.Sprintf(rankUrl, code), refer)
+		//收益率
+		//近一年
+		var pastTemp = f.extract2(raw, syl1n, []byte{'"'})
+		val, ok := (*earningsMap)[code]
+		if !ok {
+			val = &model.DfFundEarnings{
+				Code:            code,
+				Date:            now,
+				Name:            name,
+				CumulativeNav:   "0",
+				DailyGrowthRate: "0",
+				NavPerUnit:      "0",
+				Past1Month:      "0",
+				Past1Week:       "0",
+				Past1Year:       "0",
+				Past2Years:      "0",
+				Past3Months:     "0",
+				Past3Years:      "0",
+				Past6Months:     "0",
+				SinceInception:  "0",
+				ThisYear:        "0",
+			}
+		}
+		var isHas bool
+		if pastTemp != nil {
+			isHas = true
+			val.Past1Year = string(pastTemp)
+		}
+
+		//近6月
+		pastTemp = f.extract2(raw, syl6y, []byte{'"'})
+		if pastTemp != nil {
+			isHas = true
+			val.Past6Months = string(pastTemp)
+		}
+
+		//近3月
+		pastTemp = f.extract2(raw, syl3y, []byte{'"'})
+		if pastTemp != nil {
+			isHas = true
+			val.Past3Months = string(pastTemp)
+		}
+
+		//近一月
+		pastTemp = f.extract2(raw, syl1y, []byte{'"'})
+		if pastTemp != nil {
+			isHas = true
+			val.Past1Month = string(pastTemp)
+		}
+
+		if isHas {
+			service.FuncDb.Save(val)
+		}
+
+		//排名
 		var grandTotal = f.extract2(raw, dataRateInSimilarType, []byte{';'})
 		var tempData = []rank{}
 		if grandTotal == nil {
@@ -150,25 +228,26 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		json.Unmarshal(grandTotal, &tempData)
 
 		for _, str := range tempData {
-			date := time.Unix(str.X/1000, 0).Format("20060102")
-			if val, ok := modelMap[date]; !ok {
+			_date := time.Unix(str.X/1000, 0).Format("20060102")
+			if _val, ok := modelMap[_date]; !ok {
 				_model := defVal
 				_model.Name = name
 				_model.Code = code
-				_model.Date = date
+				_model.Date = _date
 				_model.Rank = str.Y
 				list = append(list, &_model)
-				modelMap[date] = &_model
+				modelMap[_date] = &_model
 			} else {
-				val.Rank = str.Y
+				_val.Rank = str.Y
 			}
 		}
 
 	avg:
+		//排名百分比
 		grandTotal = f.extract2(raw, dataRateInSimilarPersent, []byte{';'})
 		var tempData2 = rankPrecent{}
 		if grandTotal == nil {
-			goto end
+			goto unit
 		}
 		json.Unmarshal(grandTotal, &tempData2)
 		for _, _rankPre := range tempData2 {
@@ -185,11 +264,60 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 				val.RankPrecent = _rankPre[1]
 			}
 		}
+	unit:
+		//单位净值
+		grandTotal = f.extract2(raw, unitNV, []byte{';'})
+		var unitList = []unitNVData{}
+		if grandTotal == nil {
+			goto total
+		}
+		json.Unmarshal(grandTotal, &unitList)
+		for _, _rankPre := range unitList {
+			_date := time.Unix(_rankPre.X/1000, 0).Format("20060102")
+			if val, ok := modelMap[_date]; !ok {
+				_model := defVal
+				_model.Name = name
+				_model.Code = code
+				_model.Date = _date
+				_model.UnitNV = _rankPre.Y
+				list = append(list, &_model)
+				modelMap[_date] = &_model
+			} else {
+				val.UnitNV = _rankPre.Y
+			}
+		}
+
+	total:
+		//单位净值
+		grandTotal = f.extract2(raw, totalNV, []byte{';'})
+		var totalList = rankPrecent{}
+		var last float64 = 0
+		if grandTotal == nil {
+			goto end
+		}
+		json.Unmarshal(grandTotal, &totalList)
+		for _, _rankPre := range totalList {
+			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format("20060102")
+			val, ok := modelMap[_date]
+			if !ok {
+				_model := defVal
+				_model.Name = name
+				_model.Code = code
+				_model.Date = _date
+				list = append(list, &_model)
+				modelMap[_date] = &_model
+				val = &_model
+			}
+			val.TotalNV = _rankPre[1]
+			val.DayIncreVal = _rankPre[1] - last
+			val.DayIncreRate = val.DayIncreVal * 100
+			last = val.TotalNV
+		}
 
 	end:
 		if len(list) > 0 {
 			service.FuncDb.CreateInBatches(list, 50)
-			modelMap = make(map[string]*model.FundEaringsRank, 500)
+			modelMap = make(map[string]*model.DfFundEarningsRank, 500)
 			list = list[:0]
 		}
 	}

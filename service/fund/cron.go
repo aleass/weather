@@ -9,32 +9,24 @@ import (
 func InitCron() {
 	list := fundList{}
 	star := fundStar{}
-	day := fundDayEarnings{}
 	earnings := fundEarnings{}
 	earningsRank := FundEaringsRank{}
 	timezone, _ := time.LoadLocation("Asia/Shanghai")
 	c := gocron.NewScheduler(timezone)
-
-	//日收益 0点
-	_, err := c.Cron("0 0 * * 2-6").Do(day.GetData)
-	if err != nil {
-		panic("cron err :" + err.Error())
-	}
-
-	//排行榜 0点
-	_, err = c.Cron("0 0 * * 2-6").Do(earningsRank.GetData)
+	//收益排行 0点
+	_, err := c.Every(1).Day().At("00:00").Do(earningsRank.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
 	//star 每个月
-	_, err = c.Cron("0 0 1 * *").Do(star.GetData)
+	_, err = c.Every(1).Month().At("00:00").Do(star.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
 	//list 每个月
-	_, err = c.Cron("0 0 1 * *").Do(list.GetData)
+	_, err = c.Every(1).Month().At("01:00").Do(list.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
@@ -44,5 +36,5 @@ func InitCron() {
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
-
+	c.StartAsync()
 }

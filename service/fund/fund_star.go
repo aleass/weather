@@ -130,9 +130,9 @@ func (f *fundStar) startExtract(data []byte, ZhaoShangDate, ShanghaiDate, Jianan
 			UpdateTime:                 now,
 			ZhaoShangSecuritiesDate:    ZhaoShangDate,
 			ZhaoShangSecuritiesTrend:   f.starHandler(info[11]),
-			JiananJinxinStar:           defaultVal(string(info[16])),
-			ZhaoShangSecuritiesStar:    defaultVal(string(info[10])),
-			ShanghaiSecuritiesStar:     defaultVal(string(info[12])),
+			JiananJinxinStar:           common.DefaultVal(string(info[16])),
+			ZhaoShangSecuritiesStar:    common.DefaultVal(string(info[10])),
+			ShanghaiSecuritiesStar:     common.DefaultVal(string(info[12])),
 		}
 
 		//更新

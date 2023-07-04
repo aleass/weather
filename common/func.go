@@ -16,3 +16,10 @@ func Int642Str(val int64) string {
 	}
 	return strconv.Itoa(int(val))
 }
+
+func DefaultVal(val string) string {
+	if val == "" {
+		return "0"
+	}
+	return val
+}

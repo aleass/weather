@@ -2,7 +2,6 @@ package fund
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"time"
 	"weather/common"
@@ -11,7 +10,7 @@ import (
 )
 
 const (
-	earningsUrl = "http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=zq&rs=&gs=0&sc=1nzf&st=desc&qdii=%s|&tabSubtype=,,,,,&pi=1&pn=30000&dx=1&v=0.6135069950706549"
+	earningsUrl = "http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=zq&rs=&gs=0&sc=1nzf&st=desc&tabSubtype=,,,,,&pi=1&pn=30000&dx=1&v=0.6135069950706549"
 )
 
 var (
@@ -23,12 +22,7 @@ type fundEarnings struct {
 }
 
 func (f *fundEarnings) GetData() {
-	var arrFund = [...]string{"041", "042"}
-	for _, _type := range arrFund {
-		url := fmt.Sprintf(earningsUrl, _type)
-		f.getUrlData(url)
-	}
-
+	f.getUrlData(earningsUrl)
 }
 
 func (f *fundEarnings) getUrlData(url string) {
@@ -74,18 +68,18 @@ func (f *fundEarnings) extract() {
 			Name:            string(val[1]),
 			Code:            string(val[0]),
 			Date:            now,
-			DailyGrowthRate: defaultVal(string(val[6])),
-			CumulativeNav:   defaultVal(string(val[5])),
-			NavPerUnit:      defaultVal(string(val[4])),
-			Past1Month:      defaultVal(string(val[8])),
-			Past1Week:       defaultVal(string(val[7])),
-			Past1Year:       defaultVal(string(val[11])),
-			Past2Years:      defaultVal(string(val[12])),
-			Past3Months:     defaultVal(string(val[9])),
-			Past3Years:      defaultVal(string(val[13])),
-			Past6Months:     defaultVal(string(val[10])),
-			SinceInception:  defaultVal(string(val[15])),
-			ThisYear:        defaultVal(string(val[14])),
+			DailyGrowthRate: common.DefaultVal(string(val[6])),
+			CumulativeNav:   common.DefaultVal(string(val[5])),
+			NavPerUnit:      common.DefaultVal(string(val[4])),
+			Past1Month:      common.DefaultVal(string(val[8])),
+			Past1Week:       common.DefaultVal(string(val[7])),
+			Past1Year:       common.DefaultVal(string(val[11])),
+			Past2Years:      common.DefaultVal(string(val[12])),
+			Past3Months:     common.DefaultVal(string(val[9])),
+			Past3Years:      common.DefaultVal(string(val[13])),
+			Past6Months:     common.DefaultVal(string(val[10])),
+			SinceInception:  common.DefaultVal(string(val[15])),
+			ThisYear:        common.DefaultVal(string(val[14])),
 		}
 		if id, ok := earningsMap[earnings.Code]; ok {
 			earnings.Id = id
@@ -95,7 +89,7 @@ func (f *fundEarnings) extract() {
 		bufferEarnings = append(bufferEarnings, earnings)
 	}
 	if len(bufferEarnings) > 0 {
-		service.FuncDb.Create(bufferEarnings)
+		service.FuncDb.CreateInBatches(bufferEarnings, 100)
 	}
 	if len(updateEarnings) > 0 {
 		service.FuncDb.Updates(updateEarnings)
