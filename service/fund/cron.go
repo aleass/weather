@@ -1,8 +1,7 @@
 package fund
 
 import (
-	"github.com/go-co-op/gocron"
-	"time"
+	cron "github.com/robfig/cron/v3"
 )
 
 // 定时
@@ -11,30 +10,29 @@ func InitCron() {
 	star := fundStar{}
 	earnings := fundEarnings{}
 	earningsRank := FundEaringsRank{}
-	timezone, _ := time.LoadLocation("Asia/Shanghai")
-	c := gocron.NewScheduler(timezone)
+	c := cron.New()
 	//收益排行 0点
-	_, err := c.Every(1).Day().At("00:00").Do(earningsRank.GetData)
+	_, err := c.AddFunc("0 0 * * 2-6", earningsRank.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
 	//star 每个月
-	_, err = c.Every(1).Month().At("00:00").Do(star.GetData)
+	_, err = c.AddFunc("0 0 * */1 *", star.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
 	//list 每个月
-	_, err = c.Every(1).Month().At("01:00").Do(list.GetData)
+	_, err = c.AddFunc("0 0 * */1 *", list.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
 
-	//earing 每周
-	_, err = c.Every(1).Sunday().Do(earnings.GetData)
+	//earing 每周日
+	_, err = c.AddFunc("0 0 * * 0", earnings.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
-	c.StartAsync()
+	c.Start()
 }
