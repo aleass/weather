@@ -9,9 +9,9 @@ import (
 	"weather/service"
 )
 
-const (
-	earningsUrl = "http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=zq&rs=&gs=0&sc=1nzf&st=desc&tabSubtype=,,,,,&pi=1&pn=30000&dx=1&v=0.6135069950706549"
-)
+/*
+阶段收益
+*/
 
 var (
 	earningsFormat = []byte("var rankData = {datas:[")
@@ -22,7 +22,7 @@ type fundEarnings struct {
 }
 
 func (f *fundEarnings) GetData() {
-	f.getUrlData(earningsUrl)
+	f.getUrlData(common.EarningsUrl)
 }
 
 func (f *fundEarnings) getUrlData(url string) {

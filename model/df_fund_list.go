@@ -8,6 +8,8 @@ type DfFundList struct {
 	Pinyin     string    `gorm:"column:pinyin"      desc:"拼音"`
 	AbbrPinyin string    `gorm:"column:abbr_pinyin" desc:"拼音简写"`
 	Type       string    `gorm:"column:type"        desc:"基金类型"`
+	Buy        string    `gorm:"column:buy"        desc:"购买"`
+	Sell       string    `gorm:"column:sell"        desc:"赎回"`
 	Date       time.Time `gorm:"column:date"        desc:"日期"`
 	Id         int64     `gorm:"column:id"          desc:""`
 }

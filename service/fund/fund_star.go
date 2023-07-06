@@ -10,9 +10,7 @@ import (
 	"weather/service"
 )
 
-const (
-	starUrl = "http://fund.eastmoney.com/data/fundrating.html"
-)
+const ()
 
 var (
 	starDatasFormat = []byte(`var fundinfos = "`)
@@ -27,7 +25,7 @@ type fundStar struct {
 }
 
 func (f *fundStar) GetData() {
-	res, err := http.Get(starUrl)
+	res, err := http.Get(common.StarUrl)
 	if err != nil {
 		common.Logger.Error(err.Error())
 		return

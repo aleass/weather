@@ -11,8 +11,6 @@ import (
 	"weather/service"
 )
 
-const fundListUrl = "http://fund.eastmoney.com/js/fundcode_search.js?v=20230630094933"
-
 var fundListFormat = []byte("var r = ")
 
 type fundList struct {
@@ -20,7 +18,7 @@ type fundList struct {
 }
 
 func (f *fundList) GetData() {
-	raw, err := common.HttpRequest(http.MethodGet, fundListUrl, nil, nil)
+	raw, err := common.HttpRequest(http.MethodGet, common.FundListUrl, nil, nil)
 	if err != nil {
 
 	}

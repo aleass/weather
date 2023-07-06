@@ -10,9 +10,17 @@ func InitCron() {
 	star := fundStar{}
 	earnings := fundEarnings{}
 	earningsRank := FundEaringsRank{}
+	buySell := FundBuySell{}
+	task := daysPastTimeRank{}
+
 	c := cron.New()
 	//收益排行 0点
 	_, err := c.AddFunc("0 0 * * 2-6", earningsRank.GetData)
+	if err != nil {
+		panic("cron err :" + err.Error())
+	}
+	//基金购买情况 0点
+	_, err = c.AddFunc("10 0 * * 2-6", buySell.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
@@ -31,6 +39,13 @@ func InitCron() {
 
 	//earing 每周日
 	_, err = c.AddFunc("0 0 * * 0", earnings.GetData)
+	if err != nil {
+		panic("cron err :" + err.Error())
+	}
+
+	//wechat
+	//基金购买情况 0点
+	_, err = c.AddFunc("30 0 * * 2-6", task.Send)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}

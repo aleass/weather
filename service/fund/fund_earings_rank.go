@@ -11,10 +11,11 @@ import (
 	"weather/service"
 )
 
+/*
+排名和日收益
+*/
 const (
-	totalEarningsUrl = "https://api.fund.eastmoney.com/pinzhong/LJSYLZS?fundCode=%s&type=se&indexcode=000300" //dt=单位，m 1月 ,se 成立来
-	rankUrl          = "https://fund.eastmoney.com/pingzhongdata/%s.js"
-	async            = 5
+	async = 5
 )
 
 var (
@@ -123,7 +124,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		defVal.CreateTime = time.Now()
 
 		//不做并发
-		raw := f.GetUrlData(common.PostType, fmt.Sprintf(totalEarningsUrl, code), refer)
+		raw := f.GetUrlData(common.PostType, fmt.Sprintf(common.TotalEarningsUrl, code), refer)
 		earnings := &totalEarnings{}
 		json.Unmarshal(raw, earnings)
 		if len(earnings.Data) < 2 {
@@ -164,7 +165,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		}
 
 		//详情数据
-		raw = f.GetUrlData(http.MethodGet, fmt.Sprintf(rankUrl, code), refer)
+		raw = f.GetUrlData(http.MethodGet, fmt.Sprintf(common.RankUrl, code), refer)
 		//收益率
 		//近一年
 		var pastTemp = f.extract2(raw, syl1n, []byte{'"'})
