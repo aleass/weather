@@ -37,7 +37,7 @@ func InitCron() {
 		panic("cron err :" + err.Error())
 	}
 
-	//earing 每周日
+	//阶段收益 每周日
 	_, err = c.AddFunc("0 0 * * 0", earnings.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())

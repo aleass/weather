@@ -53,7 +53,7 @@ type equ struct {
 
 func (f *FundEaringsRank) GetData() {
 	var earningsRankMode []model.DfFundEarningsRank
-	months := time.Now().AddDate(0, -2, 0).Format("20060102")
+	months := time.Now().AddDate(0, -2, 0).Format(common.UsualTime)
 	service.FuncDb.Select("date,code").Model(&model.DfFundEarningsRank{}).Where("date >= ?", months).Find(&earningsRankMode)
 	earningsRankMap := make(map[equ]struct{}, len(earningsRankMode))
 	for _, data := range earningsRankMode {
@@ -87,7 +87,6 @@ func (f *FundEaringsRank) GetData() {
 	}
 
 	close(closeChan)
-	println("end")
 }
 
 type EaringsRankRes struct {
@@ -133,12 +132,12 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		fundData := earnings.Data[0]
 		unix := fundData.Data[len(fundData.Data)-1][0]
 		date := time.Unix(int64(unix)/1000, 0)
-		if _, ok := (*earingsRankMap)[equ{date: date.Format("20060102"), code: code}]; ok {
+		if _, ok := (*earingsRankMap)[equ{date: date.Format(common.UsualTime), code: code}]; ok {
 			continue
 		}
 		//累计
 		for _, datum := range earnings.Data[0].Data {
-			_date := time.Unix(int64(datum[0])/1000, 0).Format("20060102")
+			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTime)
 			_model := defVal
 			_model.Name = name
 			_model.Code = code
@@ -150,7 +149,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 		//平均
 		for _, datum := range earnings.Data[1].Data {
-			_date := time.Unix(int64(datum[0])/1000, 0).Format("20060102")
+			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTime)
 			if val, ok := modelMap[_date]; !ok {
 				_model := defVal
 				_model.Name = name
@@ -166,9 +165,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 		//详情数据
 		raw = f.GetUrlData(http.MethodGet, fmt.Sprintf(common.RankUrl, code), refer)
-		//收益率
-		//近一年
-		var pastTemp = f.extract2(raw, syl1n, []byte{'"'})
+
 		val, ok := (*earningsMap)[code]
 		if !ok {
 			val = &model.DfFundEarnings{
@@ -189,34 +186,38 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 				ThisYear:        "0",
 			}
 		}
-		var isHas bool
+
+		//收益率
+		var hasEarnings bool
+		//近一年
+		var pastTemp = f.extract2(raw, syl1n, []byte{'"'})
 		if pastTemp != nil {
-			isHas = true
+			hasEarnings = true
 			val.Past1Year = string(pastTemp)
 		}
 
 		//近6月
 		pastTemp = f.extract2(raw, syl6y, []byte{'"'})
 		if pastTemp != nil {
-			isHas = true
+			hasEarnings = true
 			val.Past6Months = string(pastTemp)
 		}
 
 		//近3月
 		pastTemp = f.extract2(raw, syl3y, []byte{'"'})
 		if pastTemp != nil {
-			isHas = true
+			hasEarnings = true
 			val.Past3Months = string(pastTemp)
 		}
 
 		//近一月
 		pastTemp = f.extract2(raw, syl1y, []byte{'"'})
 		if pastTemp != nil {
-			isHas = true
+			hasEarnings = true
 			val.Past1Month = string(pastTemp)
 		}
 
-		if isHas {
+		if hasEarnings {
 			service.FuncDb.Save(val)
 		}
 
@@ -229,7 +230,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		json.Unmarshal(grandTotal, &tempData)
 
 		for _, str := range tempData {
-			_date := time.Unix(str.X/1000, 0).Format("20060102")
+			_date := time.Unix(str.X/1000, 0).Format(common.UsualTime)
 			if _val, ok := modelMap[_date]; !ok {
 				_model := defVal
 				_model.Name = name
@@ -252,7 +253,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		}
 		json.Unmarshal(grandTotal, &tempData2)
 		for _, _rankPre := range tempData2 {
-			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format("20060102")
+			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format(common.UsualTime)
 			if val, ok := modelMap[_date]; !ok {
 				_model := defVal
 				_model.Name = name
@@ -274,7 +275,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		}
 		json.Unmarshal(grandTotal, &unitList)
 		for _, _rankPre := range unitList {
-			_date := time.Unix(_rankPre.X/1000, 0).Format("20060102")
+			_date := time.Unix(_rankPre.X/1000, 0).Format(common.UsualTime)
 			if val, ok := modelMap[_date]; !ok {
 				_model := defVal
 				_model.Name = name
@@ -298,7 +299,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		}
 		json.Unmarshal(grandTotal, &totalList)
 		for _, _rankPre := range totalList {
-			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format("20060102")
+			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format(common.UsualTime)
 			val, ok := modelMap[_date]
 			if !ok {
 				_model := defVal

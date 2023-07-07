@@ -2,7 +2,9 @@ package fund
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 	"weather/common"
 	"weather/model"
@@ -18,18 +20,13 @@ var (
 )
 
 type fundEarnings struct {
-	data []byte
 }
 
 func (f *fundEarnings) GetData() {
-	f.getUrlData(common.EarningsUrl)
-}
-
-func (f *fundEarnings) getUrlData(url string) {
 	refer := [][2]string{
 		{"Referer", "http://fund.eastmoney.com/data/fundranking.html"},
 	}
-	res, err := common.HttpRequest(http.MethodPost, url, nil, refer)
+	res, err := common.HttpRequest(http.MethodPost, common.EarningsUrl, nil, refer)
 	if err != nil {
 		common.Logger.Error(err.Error())
 		return
@@ -42,13 +39,12 @@ func (f *fundEarnings) getUrlData(url string) {
 	if index := bytes.Index(res, earningsFormat); index != -1 {
 		res = res[index+len(earningsFormat)+1:]
 		if index2 := bytes.IndexByte(res, ']'); index2 != -1 {
-			f.data = res[:index2-1]
-			f.extract()
+			f.extract(res[:index2-1])
 		}
 	}
 }
 
-func (f *fundEarnings) extract() {
+func (f *fundEarnings) extract(data []byte) {
 	var bufferEarnings []model.DfFundEarnings
 	var updateEarnings []model.DfFundEarnings
 	service.FuncDb.Model(&model.DfFundEarnings{}).Find(&bufferEarnings)
@@ -59,8 +55,19 @@ func (f *fundEarnings) extract() {
 
 	bufferEarnings = bufferEarnings[:0]
 
-	earList := bytes.Split(f.data, []byte(`","`))
+	earList := bytes.Split(data, []byte(`","`))
 	now := time.Now()
+	nowDate := now.Format("2006-01-02 15:04:05")
+
+	var df []model.DfFundList
+	service.FuncDb.Model(&model.DfFundList{}).Select("id,code").Where("Inc_date is null").Find(&df)
+	var codeMap = make(map[string]int64, len(df))
+	for _, fund := range df {
+		codeMap[fund.Code] = fund.Id
+	}
+
+	updateBuff := strings.Builder{}
+	sql := "UPDATE `df_fund_list` SET `Inc_date`='%s',`date`='%s' WHERE `id` = %d;"
 
 	for _, v := range earList {
 		val := bytes.Split(v, []byte(","))
@@ -81,12 +88,18 @@ func (f *fundEarnings) extract() {
 			SinceInception:  common.DefaultVal(string(val[15])),
 			ThisYear:        common.DefaultVal(string(val[14])),
 		}
+		//成立日
+		if id, ok := codeMap[earnings.Code]; ok {
+			updateBuff.WriteString(fmt.Sprintf(sql, string(val[16]), nowDate, id))
+		}
+
 		if id, ok := earningsMap[earnings.Code]; ok {
 			earnings.Id = id
 			updateEarnings = append(updateEarnings, earnings)
 			continue
 		}
 		bufferEarnings = append(bufferEarnings, earnings)
+
 	}
 	if len(bufferEarnings) > 0 {
 		service.FuncDb.CreateInBatches(bufferEarnings, 100)
@@ -94,5 +107,9 @@ func (f *fundEarnings) extract() {
 	if len(updateEarnings) > 0 {
 		service.FuncDb.Updates(updateEarnings)
 	}
-	f.data = f.data[:0]
+
+	if updateBuff.Len() != 0 {
+		service.FuncDb.Exec(updateBuff.String())
+	}
+
 }

@@ -117,7 +117,7 @@ func (info *urlInfo) WatchWeather() {
 		}
 	end:
 		isTimeTo = false
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Minute * 10)
 	}
 }
 

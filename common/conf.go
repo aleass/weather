@@ -33,7 +33,8 @@ type Config struct {
 		Port     string `json:"port"`
 	} `json:"db"`
 
-	Fund []struct {
-		Notes string `mapstructure:"note"`
+	Fund struct {
+		Host  string   `json:"host"`
+		Notes []string `mapstructure:"notes"`
 	} `json:"fund"`
 }

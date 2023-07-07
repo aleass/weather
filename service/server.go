@@ -66,6 +66,7 @@ func Run() {
 		if err := recover(); err != nil {
 			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
 		}
+		time.Sleep(time.Minute * 10)
 		Run()
 	}()
 	var (
@@ -135,6 +136,7 @@ func Run() {
 			}
 		}
 		common.ErrorUrl = wechatUrl + wechatNoteMap["error"]
+		healUrl = wechatUrl + wechatNoteMap["mine"]
 		<-watch.Events //文件监控
 	}
 }

@@ -3,14 +3,17 @@ package service
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 	"weather/common"
 )
 
 var (
 	timeDump = make(chan struct{}, 1)
+	healUrl  string
 )
 
 // Recover 错误
@@ -26,6 +29,11 @@ func Recover(c *gin.Context) {
 	c.Next()
 }
 
+type HeartRate struct {
+	Heart string `json:"heart"`
+	Time  string `json:"time"`
+}
+
 func HttpRun() {
 	r := gin.Default()
 	file, _ := os.Create("access.log")
@@ -34,7 +42,41 @@ func HttpRun() {
 	r.GET("/list", ListConfigUser)
 	r.GET("/set", UserHandler)
 
+	//健康
+	h := r.Group("/health")
+	{
+		h.POST("/heart_rate", heartRate)
+	}
+
+	//fund
+	f := r.Group("fund")
+	{
+		f.GET("day", GetTodayEFund)
+	}
+
 	r.Run(":8080")
+}
+
+func heartRate(c *gin.Context) {
+	var h HeartRate
+	c.Bind(&h)
+	if h.Time == "" {
+		return
+	}
+	heartsStr := strings.Split(h.Heart, "\n")
+	timeStr := strings.Split(h.Time, "\n")
+	now := time.Now()
+	heartMsg := "心率:"
+	for i, heart := range heartsStr {
+		heartTime, _ := time.ParseInLocation("2006年1月2日 15:04", timeStr[i], time.Local)
+		if heartTime.Hour() != now.Hour() {
+			continue
+		}
+		heartMsg += "\n" + heartTime.Format(common.UsualTimeHour) + " 心率:" + heart
+	}
+
+	common.Send(heartMsg, healUrl)
+
 }
 
 func ListConfigUser(context *gin.Context) {
@@ -151,4 +193,11 @@ end:
 		name, op, main, ip, adcodes)
 	context.JSON(200, _msg)
 	common.LogSend(_msg, common.InfoErrorType)
+}
+
+func GetTodayEFund(c *gin.Context) {
+	var list []common.DaysPastTimeRank
+	FuncDb.Raw(common.DaysPastTimeRankSql).Find(&list)
+	buff := strings.NewReader(common.AdjustData(list))
+	io.Copy(c.Writer, buff)
 }
