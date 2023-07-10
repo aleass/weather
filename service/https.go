@@ -72,11 +72,15 @@ func heartRate(c *gin.Context) {
 		if heartTime.Hour() != now.Hour() {
 			continue
 		}
+		if index := strings.Index(heart, "."); index != -1 {
+			heart = heart[:index]
+		}
 		heartMsg += "\n" + heartTime.Format(common.UsualTimeHour) + " 心率:" + heart
 	}
-
+	if heartMsg == "心率:" {
+		return
+	}
 	common.Send(heartMsg, healUrl)
-
 }
 
 func ListConfigUser(context *gin.Context) {
