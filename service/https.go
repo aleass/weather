@@ -54,6 +54,9 @@ func HttpRun() {
 		f.GET("day", GetTodayEFund)
 	}
 
+	//other
+	r.GET("kd", GetExpressage)
+
 	r.Run(":8080")
 }
 
@@ -66,21 +69,22 @@ func heartRate(c *gin.Context) {
 	heartsStr := strings.Split(h.Heart, "\n")
 	timeStr := strings.Split(h.Time, "\n")
 	now := time.Now()
-	heartMsg := "心率:"
+	heartMsg := ""
+	var firstHour, _ = time.ParseInLocation("2006年1月2日 15:04", timeStr[0], time.Local)
 	for i, heart := range heartsStr {
 		heartTime, _ := time.ParseInLocation("2006年1月2日 15:04", timeStr[i], time.Local)
-		if heartTime.Hour() != now.Hour() {
-			continue
+		if firstHour.Hour()-1 > heartTime.Hour() || (firstHour.Hour()-1 == heartTime.Hour() && firstHour.Minute() > heartTime.Minute()) {
+			break
 		}
 		if index := strings.Index(heart, "."); index != -1 {
 			heart = heart[:index]
 		}
 		heartMsg += "\n" + heartTime.Format(common.UsualTimeHour) + " 心率:" + heart
 	}
-	if heartMsg == "心率:" {
+	if heartMsg == "" {
 		return
 	}
-	common.Send(heartMsg, healUrl)
+	common.Send(now.Format(common.UsualDate)+heartMsg, healUrl)
 }
 
 func ListConfigUser(context *gin.Context) {

@@ -15,7 +15,7 @@ func InitCron() {
 
 	c := cron.New()
 	//收益排行 0点
-	_, err := c.AddFunc("0 0 * * 2-6", earningsRank.GetData)
+	_, err := c.AddFunc("0 0-5 * * 2-6", earningsRank.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}

@@ -14,6 +14,14 @@ func Str2Int64(val string) int64 {
 	return int64(num)
 }
 
+func Str2Int(val string) int {
+	if val == "" {
+		return 0
+	}
+	num, _ := strconv.Atoi(val)
+	return num
+}
+
 func Int642Str(val int64) string {
 	if val == 0 {
 		return ""
