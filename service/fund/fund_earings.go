@@ -23,6 +23,8 @@ type fundEarnings struct {
 }
 
 func (f *fundEarnings) GetData() {
+	common.Logger.Info("执行 阶段收益任务")
+
 	refer := [][2]string{
 		{"Referer", "http://fund.eastmoney.com/data/fundranking.html"},
 	}

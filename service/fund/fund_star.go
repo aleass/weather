@@ -25,6 +25,8 @@ type fundStar struct {
 }
 
 func (f *fundStar) GetData() {
+		common.Logger.Info("执行 基金评级任务")
+
 	res, err := http.Get(common.StarUrl)
 	if err != nil {
 		common.Logger.Error(err.Error())

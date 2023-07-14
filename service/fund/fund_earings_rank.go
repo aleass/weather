@@ -52,40 +52,39 @@ type equ struct {
 	code string
 }
 
+var lastDate string
+
 func (f *FundEaringsRank) GetData() {
-	var now = time.Now().Format("20060102")
+	time.Sleep(time.Second * 3)
+	var _now = time.Now()
+	now := _now.Format("20060102")
 	if now == f.run {
 		return
 	}
-	var earningsRankMode []model.DfFundEarningsRank
-	months := time.Now().AddDate(0, -2, 0).Format(common.UsualTime)
-	service.FuncDb.Select("date,code").Model(&model.DfFundEarningsRank{}).Where("date >= ?", months).Find(&earningsRankMode)
-	earningsRankMap := make(map[equ]struct{}, len(earningsRankMode))
-	for _, data := range earningsRankMode {
-		earningsRankMap[equ{data.Date, data.Code}] = struct{}{}
-	}
+	var earningsRankMode model.DfFundEarningsRank
+	service.FuncDb.Select("date").Model(&model.DfFundEarningsRank{}).Order("date desc").Limit(1).Find(&earningsRankMode)
+	lastDate = earningsRankMode.Date
 
 	//收益率
 	var dfEarningsMode []model.DfFundEarnings
-	earningsMap := make(map[string]int64, len(earningsRankMode))
 	service.FuncDb.Select("id,code").Model(&model.DfFundEarnings{}).Find(&dfEarningsMode)
+	earningsMap := make(map[string]int64, len(dfEarningsMode))
 	for _, data := range dfEarningsMode {
 		earningsMap[data.Code] = data.Id
 	}
 
 	codes := make(chan [2]string, 1000)
-
 	var df []model.DfFundList
 	service.FuncDb.Model(&model.DfFundList{}).Where("`type` LIKE '债券型%'").Find(&df)
-
 	var closeChan = make(chan struct{}, async)
 	for i := 0; i < async; i++ {
-		go f.getEaringsRankUrlData(codes, closeChan, &earningsRankMap, &earningsMap)
+		go f.getEaringsRankUrlData(codes, closeChan, &earningsMap)
 	}
 
 	for _, fund := range df {
 		codes <- [2]string{fund.Code, fund.Name}
 	}
+
 	close(codes)
 	for i := 0; i < async; i++ {
 		<-closeChan
@@ -93,6 +92,7 @@ func (f *FundEaringsRank) GetData() {
 
 	close(closeChan)
 	f.run = now
+	println(time.Now().Sub(_now).String())
 }
 
 type EaringsRankRes struct {
@@ -106,7 +106,7 @@ type totalEarnings struct {
 	} `json:"Data"`
 }
 
-func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan chan struct{}, earingsRankMap *map[equ]struct{}, earningsMap *map[string]int64) {
+func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan chan struct{}, earningsMap *map[string]int64) {
 	refer := [][2]string{
 		{"Referer", "http://fundf10.eastmoney.com/"},
 		{"Host", "api.fund.eastmoney.com"},
@@ -122,55 +122,15 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 	var modelMap = make(map[string]*model.DfFundEarningsRank, 500)
 	var list = make([]*model.DfFundEarningsRank, 0, 500)
+	earnings := &totalEarnings{}
+
 	now := time.Now()
 	for data := range codes {
 		code := data[0]
 		name := data[1]
 		defVal.CreateTime = time.Now()
-
-		//不做并发
-		raw := f.GetUrlData(common.PostType, fmt.Sprintf(common.TotalEarningsUrl, code), refer)
-		earnings := &totalEarnings{}
-		json.Unmarshal(raw, earnings)
-		if len(earnings.Data) < 2 {
-			continue
-		}
-		fundData := earnings.Data[0]
-		unix := fundData.Data[len(fundData.Data)-1][0]
-		date := time.Unix(int64(unix)/1000, 0)
-		if _, ok := (*earingsRankMap)[equ{date: date.Format(common.UsualTimeInt), code: code}]; ok {
-			continue
-		}
-		//累计
-		for _, datum := range earnings.Data[0].Data {
-			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTimeInt)
-			_model := defVal
-			_model.Name = name
-			_model.Code = code
-			_model.Date = _date
-			_model.TotalRate = fmt.Sprintf("%f", datum[1])
-			list = append(list, &_model)
-			modelMap[_date] = &_model
-		}
-
-		//平均
-		for _, datum := range earnings.Data[1].Data {
-			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTimeInt)
-			if val, ok := modelMap[_date]; !ok {
-				_model := defVal
-				_model.Name = name
-				_model.Code = code
-				_model.Date = _date
-				_model.TotalRate = fmt.Sprintf("%f", datum[1])
-				list = append(list, &_model)
-				modelMap[_date] = &_model
-			} else {
-				val.KindAvgRate = fmt.Sprintf("%f", datum[1])
-			}
-		}
-
 		//详情数据
-		raw = f.GetUrlData(http.MethodGet, fmt.Sprintf(common.RankUrl, code), refer)
+		raw := f.GetUrlData(http.MethodGet, fmt.Sprintf(common.RankUrl, code), refer)
 		sql := "UPDATE `df_fund_earnings` SET date = '%s',`past_1_month`=%s,`past_1_year`=%s,`past_3_months`=%s,`past_6_months`=%s WHERE `id` =%d"
 		var past_1_month, past_1_year, past_3_months, past_6_months string
 
@@ -229,17 +189,17 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 		for _, str := range tempData {
 			_date := time.Unix(str.X/1000, 0).Format(common.UsualTimeInt)
-			if _val, ok := modelMap[_date]; !ok {
+			val, ok := modelMap[_date]
+			if !ok {
 				_model := defVal
 				_model.Name = name
 				_model.Code = code
 				_model.Date = _date
-				_model.Rank = str.Y
 				list = append(list, &_model)
 				modelMap[_date] = &_model
-			} else {
-				_val.Rank = str.Y
+				val = &_model
 			}
+			val.Rank = str.Y
 		}
 
 	avg:
@@ -252,18 +212,19 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		json.Unmarshal(grandTotal, &tempData2)
 		for _, _rankPre := range tempData2 {
 			_date := time.Unix(int64(_rankPre[0]/1000), 0).Format(common.UsualTimeInt)
-			if val, ok := modelMap[_date]; !ok {
+			val, ok := modelMap[_date]
+			if !ok {
 				_model := defVal
 				_model.Name = name
 				_model.Code = code
 				_model.Date = _date
-				_model.RankPrecent = _rankPre[1]
 				list = append(list, &_model)
 				modelMap[_date] = &_model
-			} else {
-				val.RankPrecent = _rankPre[1]
+				val = &_model
 			}
+			val.RankPrecent = _rankPre[1]
 		}
+
 	unit:
 		//单位净值
 		grandTotal = f.extract2(raw, unitNV, []byte{';'})
@@ -274,17 +235,17 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		json.Unmarshal(grandTotal, &unitList)
 		for _, _rankPre := range unitList {
 			_date := time.Unix(_rankPre.X/1000, 0).Format(common.UsualTimeInt)
-			if val, ok := modelMap[_date]; !ok {
+			val, ok := modelMap[_date]
+			if !ok {
 				_model := defVal
 				_model.Name = name
 				_model.Code = code
 				_model.Date = _date
-				_model.UnitNV = _rankPre.Y
 				list = append(list, &_model)
 				modelMap[_date] = &_model
-			} else {
-				val.UnitNV = _rankPre.Y
+				val = &_model
 			}
+			val.UnitNV = _rankPre.Y
 		}
 
 	total:
@@ -293,7 +254,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		var totalList = rankPrecent{}
 		var last float64 = 0
 		if grandTotal == nil {
-			goto end
+			goto earings
 		}
 		json.Unmarshal(grandTotal, &totalList)
 		for _, _rankPre := range totalList {
@@ -311,12 +272,59 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 			val.TotalNV = _rankPre[1]
 			val.DayIncreVal = _rankPre[1] - last
 			val.DayIncreRate = val.DayIncreVal * 100
-			last = val.TotalNV
+		}
+
+	earings:
+		//累计数据
+		raw = f.GetUrlData(common.PostType, fmt.Sprintf(common.TotalEarningsUrl, code), refer)
+		json.Unmarshal(raw, earnings)
+		if len(earnings.Data) < 2 {
+			goto end
+		}
+
+		//累计
+		for _, datum := range earnings.Data[0].Data {
+			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTimeInt)
+			val, ok := modelMap[_date]
+			if !ok {
+				_model := defVal
+				_model.Name = name
+				_model.Code = code
+				_model.Date = _date
+				list = append(list, &_model)
+				modelMap[_date] = &_model
+				val = &_model
+			}
+			val.TotalRate = fmt.Sprintf("%f", datum[1])
+		}
+
+		//平均
+		for _, datum := range earnings.Data[1].Data {
+			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTimeInt)
+			val, ok := modelMap[_date]
+			if !ok {
+				_model := defVal
+				_model.Name = name
+				_model.Code = code
+				_model.Date = _date
+				list = append(list, &_model)
+				modelMap[_date] = &_model
+				val = &_model
+			}
+			val.KindAvgRate = fmt.Sprintf("%f", datum[1])
+
 		}
 
 	end:
 		if len(list) > 0 {
-			service.FuncDb.CreateInBatches(list, 50)
+			for i, d := range list {
+				if d.Date <= lastDate {
+					continue
+				}
+				service.FuncDb.CreateInBatches(list[i:], 50)
+				break
+			}
+
 			modelMap = make(map[string]*model.DfFundEarningsRank, 500)
 			list = list[:0]
 		}

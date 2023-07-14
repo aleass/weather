@@ -18,10 +18,14 @@ type fundList struct {
 }
 
 func (f *fundList) GetData() {
+	common.Logger.Info("执行 基金列表")
+
 	raw, err := common.HttpRequest(http.MethodGet, common.FundListUrl, nil, nil)
 	if err != nil {
-
+		common.Logger.Error(err.Error())
+		return
 	}
+
 	index := bytes.Index(raw, fundListFormat)
 	if index == -1 {
 		return

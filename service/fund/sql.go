@@ -11,8 +11,11 @@ type daysPastTimeRank struct {
 }
 
 func (s *daysPastTimeRank) Send() {
+	common.Logger.Info("执行 基金购买情况")
 	var list []common.DaysPastTimeRank
-	service.FuncDb.Raw(common.DaysPastTimeRankSql).Find(&list)
+	if db := service.FuncDb.Raw(common.DaysPastTimeRankSql).Find(&list); db.Error != nil {
+		common.Logger.Error(db.Error.Error())
+	}
 	var msg = buffer.Buffer{}
 
 	for _, info := range list {

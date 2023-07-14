@@ -23,6 +23,8 @@ type FundBuySell struct {
 
 // 获取数据
 func (f *FundBuySell) GetData() {
+		common.Logger.Info("执行 基金购买情况")
+
 	var temp [][]string
 	res, err := http.Get(common.FundBuySellUrl)
 	if err != nil {
