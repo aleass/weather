@@ -55,7 +55,6 @@ type equ struct {
 var lastDate string
 
 func (f *FundEaringsRank) GetData() {
-	time.Sleep(time.Second * 3)
 	var _now = time.Now()
 	now := _now.Format("20060102")
 	if now == f.run {
@@ -132,40 +131,40 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		//详情数据
 		raw := f.GetUrlData(http.MethodGet, fmt.Sprintf(common.RankUrl, code), refer)
 		sql := "UPDATE `df_fund_earnings` SET date = '%s',`past_1_month`=%s,`past_1_year`=%s,`past_3_months`=%s,`past_6_months`=%s WHERE `id` =%d"
-		var past_1_month, past_1_year, past_3_months, past_6_months string
+		var past_1_month, past_1_year, past_3_months, past_6_months = "0", "0", "0", "0"
 
 		id, ok := (*earningsMap)[code]
 		if !ok {
 			sql = "INSERT INTO `fund`.`df_fund_earnings`(`code`, `name`, `date`, `past_1_month`, `past_1_year`, " +
-				"`past_3_months`, `past_6_months`) VALUES ('%s','%s',%s,%s,%s,%s,%s)"
+				"`past_3_months`, `past_6_months`) VALUES ('%s','%s','%s','%s','%s','%s','%s')"
 		}
 
 		//收益率
 		var hasEarnings bool
 		//近一年
 		var pastTemp = f.extract2(raw, syl1n, []byte{'"'})
-		if pastTemp != nil {
+		if len(pastTemp) > 0 {
 			hasEarnings = true
 			past_1_year = string(pastTemp)
 		}
 
 		//近6月
 		pastTemp = f.extract2(raw, syl6y, []byte{'"'})
-		if pastTemp != nil {
+		if len(pastTemp) > 0 {
 			hasEarnings = true
 			past_6_months = string(pastTemp)
 		}
 
 		//近3月
 		pastTemp = f.extract2(raw, syl3y, []byte{'"'})
-		if pastTemp != nil {
+		if len(pastTemp) > 0 {
 			hasEarnings = true
 			past_3_months = string(pastTemp)
 		}
 
 		//近一月
 		pastTemp = f.extract2(raw, syl1y, []byte{'"'})
-		if pastTemp != nil {
+		if len(pastTemp) > 0 {
 			hasEarnings = true
 			past_1_month = string(pastTemp)
 		}
@@ -176,7 +175,10 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 			} else {
 				sql = fmt.Sprintf(sql, code, name, now.Format("2006-01-02 15:04:05"), past_1_month, past_1_year, past_3_months, past_6_months)
 			}
-			service.FuncDb.Exec(sql)
+			if err := service.FuncDb.Exec(sql).Error; err != nil {
+				common.Logger.Error(err.Error())
+			}
+
 		}
 
 		//排名
@@ -321,7 +323,10 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 				if d.Date <= lastDate {
 					continue
 				}
-				service.FuncDb.CreateInBatches(list[i:], 50)
+				if err := service.FuncDb.CreateInBatches(list[i:], 50).Error; err != nil {
+					common.Logger.Error(err.Error())
+
+				}
 				break
 			}
 

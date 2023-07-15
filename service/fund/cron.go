@@ -14,9 +14,9 @@ func InitCron() {
 	task := daysPastTimeRank{}
 
 	c := cron.New()
-	go earningsRank.GetData()
+
 	//收益排行 0点
-	_, err := c.AddFunc("0 0-5 * * 2-6", earningsRank.GetData)
+	_, err := c.AddFunc("0 0 * * 2-6", earningsRank.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
@@ -43,7 +43,6 @@ func InitCron() {
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
-
 
 	//基金购买情况 0点
 	_, err = c.AddFunc("30 0 * * 2-6", task.Send)
