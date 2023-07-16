@@ -3,6 +3,7 @@ package fund
 import (
 	"fmt"
 	"go.uber.org/zap/buffer"
+	"time"
 	"weather/common"
 	"weather/service"
 )
@@ -12,12 +13,15 @@ type daysPastTimeRank struct {
 
 func (s *daysPastTimeRank) Send() {
 	common.Logger.Info("执行 基金购买情况")
+	if len(service.MyConfig.Fund.Notes) == 0 {
+		return
+	}
 	var list []common.DaysPastTimeRank
 	if db := service.FuncDb.Raw(common.DaysPastTimeRankSql).Find(&list); db.Error != nil {
 		common.Logger.Error(db.Error.Error())
 	}
 	var msg = buffer.Buffer{}
-
+	msg.WriteString(time.Now().Format(common.UsualDate) + "\n")
 	for _, info := range list {
 		msg.WriteString(fmt.Sprintf("%s %s %s\n", info.Past1Month[:len(info.Past1Month)-2], info.Code, info.Name))
 	}
