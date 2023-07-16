@@ -227,7 +227,7 @@ type Weather struct {
 			//Temperature []struct {
 			//	//Datetime string  `json:"datetime" desc:"时间"`
 			//	Value float64 `json:"value" desc:""`
-			//} `json:"temperature" desc:""`
+			//} `json:"temperature" desc:"温度"`
 			//ApparentTemperature []struct {
 			//	//Datetime string  `json:"datetime" desc:"时间"`
 			//	Value float64 `json:"value" desc:""`
@@ -307,161 +307,163 @@ type Weather struct {
 				Avg         float64 `json:"avg" desc:""`
 				Probability int     `json:"probability" desc:""`
 			} `json:"precipitation" desc:"降水"`
+			*/
 			Temperature []struct {
 				//Date string  `json:"date" desc:""`
 				Max float64 `json:"max" desc:""`
 				Min float64 `json:"min" desc:""`
 				Avg float64 `json:"avg" desc:""`
 			} `json:"temperature" desc:"全天地表 2 米气温"`
-			Temperature08H20H []struct {
-				//Date string  `json:"date" desc:""`
-				Max float64 `json:"max" desc:""`
-				Min float64 `json:"min" desc:""`
-				Avg float64 `json:"avg" desc:""`
-			} `json:"temperature_08h_20h" desc:"白天地表 2 米气温"`
-			Temperature20H32H []struct {
-				//Date string  `json:"date" desc:""`
-				Max float64 `json:"max" desc:""`
-				Min float64 `json:"min" desc:""`
-				Avg float64 `json:"avg" desc:""`
-			} `json:"temperature_20h_32h" desc:"夜晚地表 2 米气温"`
-			//Wind []struct {
-			//	Date string `json:"date" desc:""`
-			//	Max  struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"max" desc:""`
-			//	Min struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"min" desc:""`
-			//	Avg struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"avg" desc:""`
-			//} `json:"wind" desc:"风速"`
-			//Wind08H20H []struct {
-			//	Date string `json:"date" desc:""`
-			//	Max  struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"max" desc:""`
-			//	Min struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"min" desc:""`
-			//	Avg struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"avg" desc:""`
-			//} `json:"wind_08h_20h" desc:"夜晚地表 10 米风速"`
-			//Wind20H32H []struct {
-			//	Date string `json:"date" desc:""`
-			//	Max  struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"max" desc:""`
-			//	Min struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"min" desc:""`
-			//	Avg struct {
-			//		Speed     float64 `json:"speed" desc:""`
-			//		Direction float64 `json:"direction" desc:""`
-			//	} `json:"avg" desc:""`
-			//} `json:"wind_20h_32h" desc:"夜晚地表 10 米风速"`
-			Humidity []struct {
-				//Date string  `json:"date" desc:""`
-				//Max  float64 `json:"max" desc:""`
-				//Min  float64 `json:"min" desc:""`
-				Avg float64 `json:"avg" desc:""`
-			} `json:"humidity" desc:"地表 2 米相对湿度(%)"`
-			//Cloudrate []struct {
-			//	Date string  `json:"date" desc:""`
-			//	Max  float64 `json:"max" desc:""`
-			//	Min  float64 `json:"min" desc:""`
-			//	Avg  float64 `json:"avg" desc:""`
-			//} `json:"cloudrate" desc:"云量(0.0-1.0)"`
-			//Pressure []struct {
-			//	Date string  `json:"date" desc:""`
-			//	Max  float64 `json:"max" desc:""`
-			//	Min  float64 `json:"min" desc:""`
-			//	Avg  float64 `json:"avg" desc:""`
-			//} `json:"pressure" desc:"地面气压"`
-			//Visibility []struct {
-			//	Date string  `json:"date" desc:""`
-			//	Max  float64 `json:"max" desc:""`
-			//	Min  float64 `json:"min" desc:""`
-			//	Avg  float64 `json:"avg" desc:""`
-			//} `json:"visibility" desc:"地表水平能见度"`
-			//Dswrf []struct {
-			//	Date string  `json:"date" desc:""`
-			//	Max  float64 `json:"max" desc:""`
-			//	Min  float64 `json:"min" desc:""`
-			//	Avg  float64 `json:"avg" desc:""`
-			//} `json:"dswrf" desc:"向下短波辐射通量(W/M2)"`
-			//AirQuality struct {
-			//	Aqi []struct {
-			//		Date string `json:"date" desc:""`
-			//		Max  struct {
-			//			Chn int `json:"chn" desc:""`
-			//			Usa int `json:"usa" desc:""`
-			//		} `json:"max" desc:""`
-			//		Avg struct {
-			//			Chn int `json:"chn" desc:""`
-			//			Usa int `json:"usa" desc:""`
-			//		} `json:"avg" desc:""`
-			//		Min struct {
-			//			Chn int `json:"chn" desc:""`
-			//			Usa int `json:"usa" desc:""`
-			//		} `json:"min" desc:""`
-			//	} `json:"aqi" desc:""`
-			//	Pm25 []struct {
-			//		Date string `json:"date" desc:""`
-			//		Max  int    `json:"max" desc:""`
-			//		Avg  int    `json:"avg" desc:""`
-			//		Min  int    `json:"min" desc:""`
-			//	} `json:"pm25" desc:""`
-			//} `json:"air_quality" desc:"国标 AQI"`
-			Skycon []struct {
-				//Date  string `json:"date" desc:""`
-				Value string `json:"value" desc:""`
-			} `json:"skycon" desc:"全天主要 天气现象"`
-			Skycon08H20H []struct {
-				//Date  string `json:"date" desc:""`
-				Value string `json:"value" desc:""`
-			} `json:"skycon_08h_20h" desc:"白天主要 天气现象"`
-			Skycon20H32H []struct {
-				//Date  string `json:"date" desc:""`
-				Value string `json:"value" desc:""`
-			} `json:"skycon_20h_32h" desc:"夜晚主要 天气现象"`
-			LifeIndex struct {
-				Ultraviolet []struct {
+			/*
+				Temperature08H20H []struct {
+					//Date string  `json:"date" desc:""`
+					Max float64 `json:"max" desc:""`
+					Min float64 `json:"min" desc:""`
+					Avg float64 `json:"avg" desc:""`
+				} `json:"temperature_08h_20h" desc:"白天地表 2 米气温"`
+				Temperature20H32H []struct {
+					//Date string  `json:"date" desc:""`
+					Max float64 `json:"max" desc:""`
+					Min float64 `json:"min" desc:""`
+					Avg float64 `json:"avg" desc:""`
+				} `json:"temperature_20h_32h" desc:"夜晚地表 2 米气温"`
+				//Wind []struct {
+				//	Date string `json:"date" desc:""`
+				//	Max  struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"max" desc:""`
+				//	Min struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"min" desc:""`
+				//	Avg struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"avg" desc:""`
+				//} `json:"wind" desc:"风速"`
+				//Wind08H20H []struct {
+				//	Date string `json:"date" desc:""`
+				//	Max  struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"max" desc:""`
+				//	Min struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"min" desc:""`
+				//	Avg struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"avg" desc:""`
+				//} `json:"wind_08h_20h" desc:"夜晚地表 10 米风速"`
+				//Wind20H32H []struct {
+				//	Date string `json:"date" desc:""`
+				//	Max  struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"max" desc:""`
+				//	Min struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"min" desc:""`
+				//	Avg struct {
+				//		Speed     float64 `json:"speed" desc:""`
+				//		Direction float64 `json:"direction" desc:""`
+				//	} `json:"avg" desc:""`
+				//} `json:"wind_20h_32h" desc:"夜晚地表 10 米风速"`
+				Humidity []struct {
+					//Date string  `json:"date" desc:""`
+					//Max  float64 `json:"max" desc:""`
+					//Min  float64 `json:"min" desc:""`
+					Avg float64 `json:"avg" desc:""`
+				} `json:"humidity" desc:"地表 2 米相对湿度(%)"`
+				//Cloudrate []struct {
+				//	Date string  `json:"date" desc:""`
+				//	Max  float64 `json:"max" desc:""`
+				//	Min  float64 `json:"min" desc:""`
+				//	Avg  float64 `json:"avg" desc:""`
+				//} `json:"cloudrate" desc:"云量(0.0-1.0)"`
+				//Pressure []struct {
+				//	Date string  `json:"date" desc:""`
+				//	Max  float64 `json:"max" desc:""`
+				//	Min  float64 `json:"min" desc:""`
+				//	Avg  float64 `json:"avg" desc:""`
+				//} `json:"pressure" desc:"地面气压"`
+				//Visibility []struct {
+				//	Date string  `json:"date" desc:""`
+				//	Max  float64 `json:"max" desc:""`
+				//	Min  float64 `json:"min" desc:""`
+				//	Avg  float64 `json:"avg" desc:""`
+				//} `json:"visibility" desc:"地表水平能见度"`
+				//Dswrf []struct {
+				//	Date string  `json:"date" desc:""`
+				//	Max  float64 `json:"max" desc:""`
+				//	Min  float64 `json:"min" desc:""`
+				//	Avg  float64 `json:"avg" desc:""`
+				//} `json:"dswrf" desc:"向下短波辐射通量(W/M2)"`
+				//AirQuality struct {
+				//	Aqi []struct {
+				//		Date string `json:"date" desc:""`
+				//		Max  struct {
+				//			Chn int `json:"chn" desc:""`
+				//			Usa int `json:"usa" desc:""`
+				//		} `json:"max" desc:""`
+				//		Avg struct {
+				//			Chn int `json:"chn" desc:""`
+				//			Usa int `json:"usa" desc:""`
+				//		} `json:"avg" desc:""`
+				//		Min struct {
+				//			Chn int `json:"chn" desc:""`
+				//			Usa int `json:"usa" desc:""`
+				//		} `json:"min" desc:""`
+				//	} `json:"aqi" desc:""`
+				//	Pm25 []struct {
+				//		Date string `json:"date" desc:""`
+				//		Max  int    `json:"max" desc:""`
+				//		Avg  int    `json:"avg" desc:""`
+				//		Min  int    `json:"min" desc:""`
+				//	} `json:"pm25" desc:""`
+				//} `json:"air_quality" desc:"国标 AQI"`
+				Skycon []struct {
+					//Date  string `json:"date" desc:""`
+					Value string `json:"value" desc:""`
+				} `json:"skycon" desc:"全天主要 天气现象"`
+				Skycon08H20H []struct {
+					//Date  string `json:"date" desc:""`
+					Value string `json:"value" desc:""`
+				} `json:"skycon_08h_20h" desc:"白天主要 天气现象"`
+				Skycon20H32H []struct {
+					//Date  string `json:"date" desc:""`
+					Value string `json:"value" desc:""`
+				} `json:"skycon_20h_32h" desc:"夜晚主要 天气现象"`
+				LifeIndex struct {
+					Ultraviolet []struct {
+						//Date  string `json:"date" desc:""`
+						//Index string `json:"index" desc:""`
+						Desc string `json:"desc" desc:""`
+					} `json:"ultraviolet" desc:"紫外线指数自然语言"`
+					//CarWashing []struct {
 					//Date  string `json:"date" desc:""`
 					//Index string `json:"index" desc:""`
-					Desc string `json:"desc" desc:""`
-				} `json:"ultraviolet" desc:"紫外线指数自然语言"`
-				//CarWashing []struct {
-				//Date  string `json:"date" desc:""`
-				//Index string `json:"index" desc:""`
-				//Desc string `json:"desc" desc:""`
-				//} `json:"carWashing" desc:"洗车指数自然语言"`
-				Dressing []struct {
-					//Date  string `json:"date" desc:""`
-					//Index string `json:"index" desc:""`
-					Desc string `json:"desc" desc:""`
-				} `json:"dressing" desc:"穿衣指数自然语言"`
-				Comfort []struct {
-					//Date  string `json:"date" desc:""`
-					//Index string `json:"index" desc:""`
-					Desc string `json:"desc" desc:""`
-				} `json:"comfort" desc:"舒适度指数自然语言"`
-				ColdRisk []struct {
-					//Date  string `json:"date" desc:""`
-					//Index string `json:"index" desc:"等级描述"`
-					Desc string `json:"desc" desc:""`
-				} `json:"coldRisk" desc:"感冒指数自然语言"`
-			} `json:"life_index" desc:"生活指数"`
+					//Desc string `json:"desc" desc:""`
+					//} `json:"carWashing" desc:"洗车指数自然语言"`
+					Dressing []struct {
+						//Date  string `json:"date" desc:""`
+						//Index string `json:"index" desc:""`
+						Desc string `json:"desc" desc:""`
+					} `json:"dressing" desc:"穿衣指数自然语言"`
+					Comfort []struct {
+						//Date  string `json:"date" desc:""`
+						//Index string `json:"index" desc:""`
+						Desc string `json:"desc" desc:""`
+					} `json:"comfort" desc:"舒适度指数自然语言"`
+					ColdRisk []struct {
+						//Date  string `json:"date" desc:""`
+						//Index string `json:"index" desc:"等级描述"`
+						Desc string `json:"desc" desc:""`
+					} `json:"coldRisk" desc:"感冒指数自然语言"`
+				} `json:"life_index" desc:"生活指数"`
 			*/
 		} `json:"daily" desc:"天级别预报"`
 		ForecastKeypoint string `json:"forecast_keypoint" desc:"自然语言描述当前情况"`

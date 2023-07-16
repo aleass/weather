@@ -9,8 +9,13 @@ import (
 )
 
 const (
-	weatherMsg = "%s %s %s %.1fC° %s %s\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%\n●%s,体感温度:%.1fC°\n●未来24小时天气:%s"
-	timeout    = 3600 * 24 //1 day
+	weatherMsg = "%s %s[%s,%s] %.1fC°" + //title 时间 地点[体感描述，天气描述] 当前温度
+		"%s" + //下雨描述
+		"\n%s" + //温度
+		"\n●紫外线:%s AQI:%s(%d) 湿度:%.1f%%" +
+		"\n●%s°" + //风向
+		"\n●未来24小时天气:%s"
+	timeout = 3600 * 24 //1 day
 )
 
 // 减少一瞬间请求
@@ -104,11 +109,21 @@ func (info *urlInfo) WatchWeather() {
 
 		//发送大于6小时才发生 天气发生变化 预警变更(取消或新增,修改)
 		if info.isEdit || isTimeTo && now.Hour() != lastDate || _weatherMsg != SkyconStatus[realtime.Skycon] || alertMsg != _alertMsg {
+			temp := ""
+			if temps := res.Result.Daily.Temperature; len(temps) > 0 {
+				temp = fmt.Sprintf("●气温:%.1fC ~ %.1fC 体感:%.1fC", temps[0].Min, temps[0].Max, realtime.ApparentTemperature)
+			} else {
+				temp = fmt.Sprintf("●气温: 体感:%.1fC", realtime.ApparentTemperature)
+			}
+
 			//发送
-			common.Send(fmt.Sprintf(weatherMsg, now.Format("15:04:05 "), info.Name+info.address, SkyconStatus[realtime.Skycon],
-				realtime.Temperature, realtime.LifeIndex.Comfort.Desc, rainMsg, realtime.LifeIndex.Ultraviolet.Desc,
-				realtime.AirQuality.Description.Chn, realtime.AirQuality.Aqi.Chn, realtime.Humidity*100, windMsg,
-				realtime.ApparentTemperature, res.Result.Hourly.Description)+alertMsg, info.WeChatUrl)
+			common.Send(fmt.Sprintf(weatherMsg, now.Format("15:04:05 "),
+				info.Name+info.address, realtime.LifeIndex.Comfort.Desc, SkyconStatus[realtime.Skycon], realtime.Temperature,
+				rainMsg,
+				temp,
+				realtime.LifeIndex.Ultraviolet.Desc, realtime.AirQuality.Description.Chn, realtime.AirQuality.Aqi.Chn, realtime.Humidity*100,
+				windMsg,
+				res.Result.Hourly.Description)+alertMsg, info.WeChatUrl)
 			//记录这次发送时间和信息
 			lastDate = now.Hour()
 			_weatherMsg = SkyconStatus[realtime.Skycon]

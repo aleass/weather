@@ -45,7 +45,7 @@ func InitCron() {
 	}
 
 	//基金购买情况 0点
-	_, err = c.AddFunc("30 0 * * 2-6", task.Send)
+	_, err = c.AddFunc("30 0 * * *", task.Send)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}

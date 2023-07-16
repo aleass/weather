@@ -52,18 +52,10 @@ type equ struct {
 	code string
 }
 
-var lastDate string
-
 func (f *FundEaringsRank) GetData() {
-	var _now = time.Now()
-	now := _now.Format("20060102")
-	if now == f.run {
-		return
-	}
-	var earningsRankMode model.DfFundEarningsRank
-	service.FuncDb.Select("date").Model(&model.DfFundEarningsRank{}).Order("date desc").Limit(1).Find(&earningsRankMode)
-	lastDate = earningsRankMode.Date
+	common.Logger.Info("执行 收益排行")
 
+	var _now = time.Now()
 	//收益率
 	var dfEarningsMode []model.DfFundEarnings
 	service.FuncDb.Select("id,code").Model(&model.DfFundEarnings{}).Find(&dfEarningsMode)
@@ -90,8 +82,7 @@ func (f *FundEaringsRank) GetData() {
 	}
 
 	close(closeChan)
-	f.run = now
-	println(time.Now().Sub(_now).String())
+	common.Logger.Info("执行 收益排行结束:" + time.Now().Sub(_now).String())
 }
 
 type EaringsRankRes struct {
@@ -122,11 +113,16 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 	var modelMap = make(map[string]*model.DfFundEarningsRank, 500)
 	var list = make([]*model.DfFundEarningsRank, 0, 500)
 	earnings := &totalEarnings{}
-
+	var earningsRankMode model.DfFundEarningsRank
 	now := time.Now()
 	for data := range codes {
 		code := data[0]
 		name := data[1]
+
+		service.FuncDb.Select("date").Model(&model.DfFundEarningsRank{}).Where("code = ?", code).
+			Order("date desc").Limit(1).Find(&earningsRankMode)
+		lastDate := earningsRankMode.Date
+
 		defVal.CreateTime = time.Now()
 		//详情数据
 		raw := f.GetUrlData(http.MethodGet, fmt.Sprintf(common.RankUrl, code), refer)
