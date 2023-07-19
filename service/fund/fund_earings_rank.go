@@ -315,6 +315,10 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 	end:
 		if len(list) > 0 {
+			//添加排序
+			sort.Slice(list, func(i, j int) bool {
+				return list[i].Date < list[j].Date
+			})
 			for i, d := range list {
 				if d.Date <= lastDate {
 					continue
