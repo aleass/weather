@@ -14,9 +14,10 @@ func InitCron() {
 	task := daysPastTimeRank{}
 
 	c := cron.New()
-
+	//交易日 0点
+	_, err := c.AddFunc("0 0 * * 2-6", TradeDay)
 	//收益排行 0点
-	_, err := c.AddFunc("0 0 * * 2-6", earningsRank.GetData)
+	_, err = c.AddFunc("0 0 * * 2-6", earningsRank.GetData)
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}

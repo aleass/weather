@@ -23,6 +23,9 @@ const (
 
 	//星
 	StarUrl = "http://fund.eastmoney.com/data/fundrating.html"
+
+	//交易日
+	TradeDayUrl = "https://push2his.eastmoney.com/api/qt/stock/kline/get?fields1=f1&fields2=f51&beg=%d&end=20990101&secid=0.000776&klt=101&fqt=1"
 )
 
 // db
