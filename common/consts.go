@@ -15,7 +15,7 @@ const (
 	//排名和日收益
 	TotalEarningsUrl = "https://api.fund.eastmoney.com/pinzhong/LJSYLZS?fundCode=%s&type=se&indexcode=000300"
 	//基金成立以来数据
-	RankUrl          = "https://fund.eastmoney.com/pingzhongdata/%s.js"
+	RankUrl = "https://fund.eastmoney.com/pingzhongdata/%s.js"
 
 	//基金列表
 	FundListUrl    = "http://fund.eastmoney.com/js/fundcode_search.js?v=20230630094933"
@@ -35,6 +35,12 @@ const (
 		",Inc_date,buy,since_inception  FROM `fund`.`df_fund_earnings` e INNER JOIN  `df_fund_list` l  on e.code = l.code " +
 		"and  type in ('债券型-长债','债券型-中短债') and buy ='开放申购' where past_1_month >= 0.3 and past_3_months >= 1.5 " +
 		"and past_6_months >= 3 and (past_1_year >= 6 or past_1_year = 0) order by past_1_month desc"
+
+	DaysPastTimeAverSql = ` SELECT code FROM df_fund_earnings_rank where total_rate > kind_avg_rate and date > 20220101 and code in (
+	SELECT code FROM fund.df_fund_list where type like '%债券型%' and buy = '开放申购' 
+	) GROUP BY code having count(1) >= (
+	select count(1)*0.99 from trade_day where date > 20220101
+	);`
 )
 
 type DaysPastTimeRank struct {
