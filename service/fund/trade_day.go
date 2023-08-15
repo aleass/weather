@@ -15,6 +15,17 @@ type TradeDayResp struct {
 	} `json:"data"`
 }
 
+// 更新平均-收益差值数据
+func UpGainData() {
+	sql := "UPDATE `fund`.`df_fund_earnings_rank` SET `gain` = total_rate -kind_avg_rate where gain != 0"
+	err := service.FuncDb.Exec(sql).Error
+	if err != nil {
+		common.Logger.Error(err.Error())
+		return
+	}
+}
+
+// 更新交易日
 func TradeDay() {
 	common.Logger.Info("执行 获取交易日")
 	var db model.TradeDay

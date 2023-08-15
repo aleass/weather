@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"time"
 	"weather/common"
 	"weather/model"
@@ -67,7 +66,8 @@ func (f *FundEaringsRank) GetData() {
 
 	codes := make(chan [2]string, 1000)
 	var df []model.DfFundList
-	service.FuncDb.Model(&model.DfFundList{}).Where("`type` LIKE '债券型%'").Find(&df)
+	//service.FuncDb.Model(&model.DfFundList{}).Where("`type` LIKE '债券型%'").Find(&df)
+	service.FuncDb.Model(&model.DfFundList{}).Where("`type` LIKE '债券型%' and code not in (SELECT code FROM df_fund_earnings_rank GROUP BY code)").Find(&df)
 	var closeChan = make(chan struct{}, async)
 	for i := 0; i < async; i++ {
 		go f.getEaringsRankUrlData(codes, closeChan, &earningsMap)
@@ -113,6 +113,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 
 	var modelMap = make(map[string]*model.DfFundEarningsRank, 500)
 	var list = make([]*model.DfFundEarningsRank, 0, 500)
+	var temp = make([]*model.DfFundEarningsRank, 0, 500)
 	earnings := &totalEarnings{}
 	var earningsRankMode model.DfFundEarningsRank
 	now := time.Now()
@@ -298,7 +299,7 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 		}
 
 		//平均
-		for _, datum := range earnings.Data[1].Data {
+		for i, datum := range earnings.Data[1].Data {
 			_date := time.Unix(int64(datum[0])/1000, 0).Format(common.UsualTimeInt)
 			val, ok := modelMap[_date]
 			if !ok {
@@ -311,27 +312,26 @@ func (f *FundEaringsRank) getEaringsRankUrlData(codes chan [2]string, closeChan 
 				val = &_model
 			}
 			val.KindAvgRate = fmt.Sprintf("%f", datum[1])
-
+			if len(earnings.Data[0].Data) > i {
+				str := fmt.Sprintf("%0.2f", earnings.Data[0].Data[i][1]-datum[1])
+				val.Gain = &str
+			}
 		}
 
 	end:
 		if len(list) > 0 {
 			//添加排序
-			sort.Slice(list, func(i, j int) bool {
-				return list[i].Date < list[j].Date
-			})
 			for i, d := range list {
 				if d.Date <= lastDate {
 					continue
 				}
-				if err := service.FuncDb.CreateInBatches(list[i:], 50).Error; err != nil {
-					common.Logger.Error(err.Error())
-
-				}
-				break
+				temp = append(temp, list[i])
 			}
-
+			if err := service.FuncDb.CreateInBatches(temp, 50).Error; err != nil {
+				common.Logger.Error(err.Error())
+			}
 			modelMap = make(map[string]*model.DfFundEarningsRank, 500)
+			temp = temp[:0]
 			list = list[:0]
 		}
 	}

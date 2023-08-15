@@ -33,7 +33,7 @@ func (s *daysPastTimeRank) Send() {
 		var msg = buffer.Buffer{}
 		msg.WriteString(time.Now().Format(common.UsualDate) + "   " + sql.name + "\n")
 		for _, info := range list {
-			msg.WriteString(fmt.Sprintf("%s %s %s\n", info.Past1Month[:len(info.Past1Month)-2], info.Code, info.Name))
+			msg.WriteString(fmt.Sprintf("%s %s\n", info.Code, info.Name))
 		}
 		msg.WriteString(fmt.Sprintf("\n\n查看数据点击 http://%s:8080/fund/day", service.MyConfig.Fund.Host))
 

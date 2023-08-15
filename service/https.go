@@ -205,7 +205,11 @@ end:
 
 func GetTodayEFund(c *gin.Context) {
 	var list []common.DaysPastTimeRank
-	FuncDb.Raw(common.DaysPastTimeRankSql).Find(&list)
+	FuncDb.Raw(common.DaysPastTimeAverSql).Find(&list)
 	buff := strings.NewReader(common.AdjustData(list))
+	io.Copy(c.Writer, buff)
+
+	FuncDb.Raw(common.DaysPastTimeRankSql).Find(&list)
+	buff = strings.NewReader(common.AdjustData(list))
 	io.Copy(c.Writer, buff)
 }

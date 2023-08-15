@@ -30,16 +30,16 @@ const (
 
 // db
 const (
+	GroupSql = "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
 	//每日基金排名
-	DaysPastTimeRankSql = "SELECT e.code,e.name, past_1_month ,past_3_months ,past_6_months ,past_1_year " +
-		",Inc_date,buy,since_inception  FROM `fund`.`df_fund_earnings` e INNER JOIN  `df_fund_list` l  on e.code = l.code " +
-		"and  type in ('债券型-长债','债券型-中短债') and buy ='开放申购' where past_1_month >= 0.3 and past_3_months >= 1.5 " +
-		"and past_6_months >= 3 and (past_1_year >= 6 or past_1_year = 0) order by past_1_month desc"
+	DaysPastTimeRankSql = "SELECT e.code,e.name FROM `fund`.`df_fund_earnings` e INNER JOIN  `df_fund_list` l  on e.code = l.code " +
+		"and  type in ('债券型-长债','债券型-中短债') and buy ='开放申购' where past_1_month >= 0.3 and past_3_months >= 1.2 " +
+		"and past_6_months >= 2 and (past_1_year >= 4 or past_1_year = 0) order by past_1_month desc"
 
-	DaysPastTimeAverSql = ` SELECT code FROM df_fund_earnings_rank where total_rate > kind_avg_rate and date > 20220101 and code in (
+	DaysPastTimeAverSql = ` SELECT code,any_value(name)name FROM df_fund_earnings_rank where gain > 0 and date > 20220101 and code in (
 	SELECT code FROM fund.df_fund_list where type like '%债券型%' and buy = '开放申购' 
 	) GROUP BY code having count(1) >= (
-	select count(1)*0.99 from trade_day where date > 20220101
+	select count(1)*0.9 from trade_day where date > 20220101
 	);`
 )
 
