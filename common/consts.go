@@ -4,6 +4,7 @@ const (
 	UsualTime     = "2006-01-02"
 	UsualTimeInt  = "20060102"
 	UsualTimeHour = "15:04:05"
+	UsualTimeDay  = "01-02 15:04"
 	UsualDate     = "2006-01-02 15:04:05"
 )
 

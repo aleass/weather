@@ -20,7 +20,7 @@ var (
 func Recover(c *gin.Context) {
 	defer func() {
 		if err := recover(); err != nil {
-			stack := common.Stack(3)
+			stack := common.Stack(2)
 			common.LogSend(fmt.Sprintf("api 发生panic：%v,stack:%s", err, string(stack)), common.PanicType)
 			c.JSON(500, "服务器发生错误,请稍后再试")
 			c.Abort()
@@ -60,6 +60,8 @@ func HttpRun() {
 	r.Run(":8080")
 }
 
+var last int64
+
 func heartRate(c *gin.Context) {
 	var h HeartRate
 	c.Bind(&h)
@@ -70,21 +72,26 @@ func heartRate(c *gin.Context) {
 	timeStr := strings.Split(h.Time, "\n")
 	now := time.Now()
 	heartMsg := ""
-	var firstHour, _ = time.ParseInLocation("2006年1月2日 15:04", timeStr[0], time.Local)
+	var _last int64
 	for i, heart := range heartsStr {
+		//保留间隔5分钟以上的
 		heartTime, _ := time.ParseInLocation("2006年1月2日 15:04", timeStr[i], time.Local)
-		if firstHour.Hour()-1 > heartTime.Hour() || (firstHour.Hour()-1 == heartTime.Hour() && firstHour.Minute() > heartTime.Minute()) {
-			break
+		if heartTime.Unix() <= last || _last-heartTime.Unix() < 300 && _last != 0 {
+			continue
 		}
+		_last = heartTime.Unix()
 		if index := strings.Index(heart, "."); index != -1 {
 			heart = heart[:index]
 		}
-		heartMsg += "\n" + heartTime.Format(common.UsualTimeHour) + " 心率:" + heart
+		heartMsg += "\n" + heartTime.Format(common.UsualTimeDay) + " " + heart
 	}
+	heartTime, _ := time.ParseInLocation("2006年1月2日 15:04", timeStr[0], time.Local)
 	if heartMsg == "" {
 		return
 	}
-	common.Send(now.Format(common.UsualDate)+heartMsg, healUrl)
+	//设置curr最新的数据
+	last = heartTime.Unix()
+	common.Send(now.Format(common.UsualTimeHour)+heartMsg, healUrl)
 }
 
 func ListConfigUser(context *gin.Context) {

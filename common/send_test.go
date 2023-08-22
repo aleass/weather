@@ -1,0 +1,114 @@
+package common
+
+import (
+	"fmt"
+	"github.com/spf13/viper"
+	"testing"
+)
+
+const wechatUrl string = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
+
+var (
+	MyConfig      = Config{}
+	wechatNoteMap = make(map[string]string, len(MyConfig.Wechat))
+)
+
+func init() {
+	var vip = viper.New()
+	vip.SetConfigFile("pkg/config.yaml")
+	vip.SetConfigType("yaml")
+	if err := vip.ReadInConfig(); err != nil {
+		panic(fmt.Errorf("无法读取配置文件: %w", err))
+	}
+
+	if err := vip.Unmarshal(&MyConfig); err != nil {
+		panic(fmt.Errorf("无法解析配置文件: %w", err))
+	}
+
+	for _, v := range MyConfig.Wechat {
+		wechatNoteMap[v.Notes] = v.Token
+	}
+}
+func TestSend(t *testing.T) {
+	var s = `123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789
+123456789`
+	Send(s, wechatUrl+wechatNoteMap["mine"])
+}
