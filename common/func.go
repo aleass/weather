@@ -58,6 +58,14 @@ func AdjustData(list []DaysPastTimeRank) string {
 			len1year = len(info.Past1Year)
 		}
 	}
+	if nameLen-4 < 0 || len1Month-3 < 0 || len3Month-3 < 0 || len6Month-3 < 0 || len1year-3 < 0 {
+		for _, info := range list {
+			str += fmt.Sprintf("[%s] %s %s %s %s %s %s %s \n", info.Buy, info.Code, info.Name, info.Past1Month,
+				info.Past3Months, info.Past6Months, info.Past1Year, info.SinceInception)
+		}
+		return str
+	}
+
 	str += strings.Repeat(" ", 2*(nameLen-4)/3) + "近一月"
 	str += strings.Repeat(" ", 2*(len1Month-3)/3) + "近三月"
 	str += strings.Repeat(" ", 2*(len3Month-3)/3) + "近六月"

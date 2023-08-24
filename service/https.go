@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
@@ -57,6 +58,52 @@ func HttpRun() {
 	//other
 	r.GET("kd", GetExpressage)
 
+	//file
+	r.POST("any_file", func(c *gin.Context) {
+		auth := c.Query("auth")
+		if auth != "qingse" {
+			return
+		}
+		// 解析多部分表单数据
+		form, err := c.MultipartForm()
+		if err != nil {
+			c.String(http.StatusBadRequest, "解析表单数据失败：%v", err)
+			return
+		}
+
+		// 获取文件字段
+		fileHeader, ok := form.File["file"]
+		if !ok {
+			c.String(http.StatusBadRequest, "未找到文件字段")
+			return
+		}
+		// 处理文件
+		for _, file := range fileHeader {
+			fileReader, err := file.Open()
+			if err != nil {
+				c.String(http.StatusInternalServerError, "打开文件失败：%v", err)
+				return
+			}
+			defer fileReader.Close()
+
+			// 保存文件到服务器
+			now := time.Now()
+			fileName := now.Format("20060102_150405_") + file.Filename
+			f, err := os.Create(fileName)
+			if err != nil {
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+			_, err = io.Copy(f, fileReader)
+			if err != nil {
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+			common.Send(now.Format(common.UsualTimeHour)+" 收到文件:"+fileName, healUrl)
+			f.Close()
+		}
+
+	})
 	r.Run(":8080")
 }
 
