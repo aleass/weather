@@ -22,7 +22,7 @@ func (s *daysPastTimeRank) Send() {
 		return
 	}
 	sqlArr := []sqlInfo{
-		{common.DaysPastTimeAverSql, "今年基金大于平均值"},
+		//{common.DaysPastTimeAverSql, "今年基金大于平均值"},
 		{common.DaysPastTimeRankSql, "表现优秀的基金"},
 	}
 	var list []common.DaysPastTimeRank

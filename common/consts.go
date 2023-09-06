@@ -34,8 +34,10 @@ const (
 	GroupSql = "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
 	//每日基金排名
 	DaysPastTimeRankSql = "SELECT e.code,e.name FROM `fund`.`df_fund_earnings` e INNER JOIN  `df_fund_list` l  on e.code = l.code " +
-		"and  type in ('债券型-长债','债券型-中短债') and buy ='开放申购' where past_1_month >= 0.3 and past_3_months >= 1.2 " +
-		"and past_6_months >= 2 and (past_1_year >= 4 or past_1_year = 0) order by past_1_month desc"
+		"and  type in ('债券型-长债','债券型-中短债') and buy ='开放申购' where " +
+		//"past_1_month >= 0.3 and past_3_months >= 1.2 and past_6_months >= 2 and (past_1_year >= 4 or past_1_year = 0) " +
+		" past_1_month > 0.35 AND past_3_months > 1 AND past_6_months > 2 AND (past_1_year > 4 OR past_1_year = 0)  " +
+		"AND `name` NOT LIKE '%年%' AND `name` NOT LIKE '%月%' order by past_1_month desc"
 
 	DaysPastTimeAverSql = ` SELECT code,any_value(name)name FROM df_fund_earnings_rank where gain > 0 and date > 20220101 and code in (
 	SELECT code FROM fund.df_fund_list where type like '%债券型%' and buy = '开放申购' 
