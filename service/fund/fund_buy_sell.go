@@ -23,7 +23,7 @@ type FundBuySell struct {
 
 // 获取数据
 func (f *FundBuySell) GetData() {
-		common.Logger.Info("执行 基金购买情况")
+	common.Logger.Info("执行 基金购买情况")
 
 	var temp [][]string
 	res, err := http.Get(common.FundBuySellUrl)
@@ -74,9 +74,6 @@ func (f *FundBuySell) extract(dataSlice [][]string) {
 	}
 	if updateBuff.Len() != 0 {
 		service.FuncDb.Exec(updateBuff.String())
-	}
-	for k := range types {
-		println(k)
 	}
 }
 

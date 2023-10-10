@@ -2,7 +2,6 @@ package fund
 
 import (
 	cron "github.com/robfig/cron/v3"
-	"time"
 )
 
 // 定时
@@ -14,9 +13,10 @@ func InitCron() {
 	buySell := FundBuySell{}
 	task := daysPastTimeRank{}
 	go func() {
-		time.Sleep(time.Second * 3)
 		//task.Send()
+		println("start")
 		earningsRank.GetData()
+		earnings.GetData()
 	}()
 	c := cron.New()
 	//交易日 0点
@@ -56,5 +56,5 @@ func InitCron() {
 	if err != nil {
 		panic("cron err :" + err.Error())
 	}
-	c.Start()
+	c.Run()
 }

@@ -60,19 +60,13 @@ func GetWechatUrl(note string) string {
 	return wechatUrl + wechatNoteMap[note]
 }
 
+var (
+	vip  = viper.New()
+	path = "pkg/config.yaml"
+)
+
 // 运行
-func Run() {
-	defer func() {
-		if err := recover(); err != nil {
-			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
-		}
-		time.Sleep(time.Minute * 10)
-		Run()
-	}()
-	var (
-		vip  = viper.New()
-		path = "pkg/config.yaml"
-	)
+func InitConfig() {
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
 	// 检查文件是否存在
@@ -81,6 +75,28 @@ func Run() {
 	}
 	vip.SetConfigFile(path)
 	vip.SetConfigType("yaml")
+	if err = vip.ReadInConfig(); err != nil {
+		panic(fmt.Errorf("无法读取配置文件: %w", err))
+	}
+
+	if err = vip.Unmarshal(&MyConfig); err != nil {
+		panic(fmt.Errorf("无法解析配置文件: %w", err))
+	}
+	//mysql
+	InitMysql()
+
+	//map
+	common.SetToken(MyConfig.QqMapToken, MyConfig.GeoMapToken)
+}
+
+func Run() {
+	defer func() {
+		if err := recover(); err != nil {
+			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
+		}
+		time.Sleep(time.Minute * 10)
+		Run()
+	}()
 
 	//创建一个监控对象
 	watch, err := fsnotify.NewWatcher()
@@ -94,49 +110,38 @@ func Run() {
 	}
 	defer watch.Close()
 	for {
-		if err = vip.ReadInConfig(); err != nil {
-			panic(fmt.Errorf("无法读取配置文件: %w", err))
-		}
+		InitConfig()
+		//if len(MyConfig.CaiYun.Token) == 0 || len(MyConfig.CaiYun.Addres) == 0 || len(MyConfig.Wechat) == 0 {
+		//	panic("token，任务，发送url为空")
+		//}
 
-		if err = vip.Unmarshal(&MyConfig); err != nil {
-			panic(fmt.Errorf("无法解析配置文件: %w", err))
-		}
-
-		if len(MyConfig.CaiYun.Token) == 0 || len(MyConfig.CaiYun.Addres) == 0 || len(MyConfig.Wechat) == 0 {
-			panic("token，任务，发送url为空")
-		}
-
-		//mysql
-		InitMysql()
-		//map
-		common.SetToken(MyConfig.QqMapToken, MyConfig.GeoMapToken)
-
-		for _, v := range MyConfig.Wechat {
-			wechatNoteMap[v.Notes] = v.Token
-		}
-		for _, v := range MyConfig.UrlConfigPass {
-			allowUrlConfig[v.Name] = v.Notes
-		}
-
-		for _, v := range MyConfig.CaiYun.Addres {
-			info, ok := taskMap[v.Addr]
-			if !ok {
-				//生成一个任务
-				task := getUrlInfo(v.Addr, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
-				taskMap[v.Addr] = task
-				info = task
-			} else {
-				updateUrlInfo(info, v.Addr, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
-			}
-			if !v.Switch && info.IsRun {
-				info.Switch <- struct{}{} //关闭一个任务
-				info.IsRun = false
-			} else if v.Switch && !info.IsRun {
-				go info.WatchWeather() //生成一个监控任务
-			}
-		}
-		common.ErrorUrl = wechatUrl + wechatNoteMap["error"]
-		healUrl = wechatUrl + wechatNoteMap["mine"]
+		//
+		//for _, v := range MyConfig.Wechat {
+		//	wechatNoteMap[v.Notes] = v.Token
+		//}
+		//for _, v := range MyConfig.UrlConfigPass {
+		//	allowUrlConfig[v.Name] = v.Notes
+		//}
+		//
+		//for _, v := range MyConfig.CaiYun.Addres {
+		//	info, ok := taskMap[v.Addr]
+		//	if !ok {
+		//		//生成一个任务
+		//		task := getUrlInfo(v.Addr, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
+		//		taskMap[v.Addr] = task
+		//		info = task
+		//	} else {
+		//		updateUrlInfo(info, v.Addr, v.Coordinate, v.WechatNotes, v.AllowWeek, 5)
+		//	}
+		//	if !v.Switch && info.IsRun {
+		//		info.Switch <- struct{}{} //关闭一个任务
+		//		info.IsRun = false
+		//	} else if v.Switch && !info.IsRun {
+		//		go info.WatchWeather() //生成一个监控任务
+		//	}
+		//}
+		//common.ErrorUrl = wechatUrl + wechatNoteMap["error"]
+		//healUrl = wechatUrl + wechatNoteMap["mine"]
 		<-watch.Events //文件监控
 	}
 }
