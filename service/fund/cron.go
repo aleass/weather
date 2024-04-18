@@ -6,9 +6,9 @@ import (
 
 // 定时
 func InitCron() {
-	list := fundList{}
-	star := fundStar{}
-	earnings := fundEarnings{}
+	list := FundList{}
+	star := FundStar{}
+	earnings := FundEarnings{}
 	earningsRank := FundEaringsRank{}
 	buySell := FundBuySell{}
 	task := daysPastTimeRank{}

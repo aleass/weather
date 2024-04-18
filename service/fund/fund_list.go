@@ -13,11 +13,11 @@ import (
 
 var fundListFormat = []byte("var r = ")
 
-type fundList struct {
+type FundList struct {
 	data [][]string
 }
 
-func (f *fundList) GetData() {
+func (f *FundList) GetData() {
 	common.Logger.Info("执行 基金列表")
 
 	raw, err := common.HttpRequest(http.MethodGet, common.FundListUrl, nil, nil)
@@ -43,7 +43,7 @@ type memequal struct {
 	Type       string `gorm:"column:type"        desc:"基金类型"`
 }
 
-func (f *fundList) extract() {
+func (f *FundList) extract() {
 	//检查新增的基金
 	var df []model.DfFundList
 	service.FuncDb.Model(&model.DfFundList{}).Find(&df)

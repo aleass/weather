@@ -3,6 +3,7 @@ package fund
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -19,10 +20,10 @@ var (
 	earningsFormat = []byte("var rankData = {datas:[")
 )
 
-type fundEarnings struct {
+type FundEarnings struct {
 }
 
-func (f *fundEarnings) GetData() {
+func (f *FundEarnings) GetData() {
 	common.Logger.Info("执行 阶段收益任务")
 
 	refer := [][2]string{
@@ -46,7 +47,7 @@ func (f *fundEarnings) GetData() {
 	}
 }
 
-func (f *fundEarnings) extract(data []byte) {
+func (f *FundEarnings) extract(data []byte) {
 	var bufferEarnings []model.DfFundEarnings
 	var updateEarnings []model.DfFundEarnings
 	service.FuncDb.Model(&model.DfFundEarnings{}).Find(&bufferEarnings)
@@ -104,10 +105,17 @@ func (f *fundEarnings) extract(data []byte) {
 
 	}
 	if len(bufferEarnings) > 0 {
-		service.FuncDb.CreateInBatches(bufferEarnings, 100)
+		service.FuncDb.CreateInBatches(&bufferEarnings, 100)
 	}
 	if len(updateEarnings) > 0 {
-		service.FuncDb.Updates(updateEarnings)
+		for _, earning := range updateEarnings {
+			var err = service.FuncDb.Updates(&earning).Error
+			if err != nil {
+				log.Println(err.Error())
+				common.Logger.Error(err.Error())
+			}
+		}
+
 	}
 
 	if updateBuff.Len() != 0 {

@@ -6,8 +6,8 @@ import (
 )
 
 func main() {
-	go service.HttpRun()
-	go fund.InitCron()
-	//获取配置并运行
-	service.Run()
+	//初始化配置
+	service.InitConfig()
+	star := fund.FundEarnings{}
+	star.GetData()
 }

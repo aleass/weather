@@ -16,46 +16,6 @@ const (
 	caiYunUrl = "https://api.caiyunapp.com/v2.6/%s/%s/weather?alert=true&dailysteps=1&hourlysteps=24&unit=metric:v2"
 )
 
-type UrlInfo struct {
-	Name        string `desc:"地址" json:"name" `
-	Address     string `json:"address" desc:"url 配置的地址"`
-	IsRun       bool   `desc:"是否运行" json:"is_run"`
-	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
-}
-
-type configInfo struct {
-	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
-	Ip          string `json:"ip"`
-	Op          string `json:"op" desc:"当前操作"`
-	Adcodes     string `json:"adcodes" desc:"经纬度"`
-	AllowNight  bool   `desc:"晚上是否运行运行"`
-	Main        string `desc:"配置信息"`
-}
-
-type urlInfo struct {
-	Name      string        `desc:"名字"`
-	Notes     string        `desc:"备注"`
-	address   string        `desc:"url 配置的地址"`
-	CaiYunUrl string        `desc:"caiyun url" json:"cai_yun_url"`
-	WeChatUrl string        `desc:"wechat url" json:"we_chat_url"`
-	Switch    chan struct{} `desc:"开关" json:"__switch"`
-	IsRun     bool          `desc:"是否运行" json:"is_run"`
-	WatchTime time.Duration `desc:"监控时间:分钟" json:"watch_time"`
-	msg       strings.Builder
-	AllowWeek *[7]bool `desc:"不为空则指定星期运行"`
-	isEdit    bool     `desc:"发送了修改"`
-	RunTime   int64    `desc:"任务创建时间"`
-	configInfo
-}
-
-var (
-	MyConfig       = common.Config{}
-	wechatNoteMap  = make(map[string]string, len(MyConfig.Wechat))
-	allowUrlConfig = make(map[string]string, len(MyConfig.UrlConfigPass))
-	taskMap        = map[string]*urlInfo{} //任务控制
-
-)
-
 func GetWechatUrl(note string) string {
 	return wechatUrl + wechatNoteMap[note]
 }
@@ -84,7 +44,6 @@ func InitConfig() {
 	}
 	//mysql
 	InitMysql()
-
 	//map
 	common.SetToken(MyConfig.QqMapToken, MyConfig.GeoMapToken)
 }
@@ -186,3 +145,43 @@ func getUrlInfo(name, coordinate, wechatNotes, allowWeek string, watchTime time.
 	}
 	return user
 }
+
+type UrlInfo struct {
+	Name        string `desc:"地址" json:"name" `
+	Address     string `json:"address" desc:"url 配置的地址"`
+	IsRun       bool   `desc:"是否运行" json:"is_run"`
+	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
+}
+
+type configInfo struct {
+	IsUrlConfig bool   `desc:"是否url配置" json:"is_url_config"`
+	Ip          string `json:"ip"`
+	Op          string `json:"op" desc:"当前操作"`
+	Adcodes     string `json:"adcodes" desc:"经纬度"`
+	AllowNight  bool   `desc:"晚上是否运行运行"`
+	Main        string `desc:"配置信息"`
+}
+
+type urlInfo struct {
+	Name      string        `desc:"名字"`
+	Notes     string        `desc:"备注"`
+	address   string        `desc:"url 配置的地址"`
+	CaiYunUrl string        `desc:"caiyun url" json:"cai_yun_url"`
+	WeChatUrl string        `desc:"wechat url" json:"we_chat_url"`
+	Switch    chan struct{} `desc:"开关" json:"__switch"`
+	IsRun     bool          `desc:"是否运行" json:"is_run"`
+	WatchTime time.Duration `desc:"监控时间:分钟" json:"watch_time"`
+	msg       strings.Builder
+	AllowWeek *[7]bool `desc:"不为空则指定星期运行"`
+	isEdit    bool     `desc:"发送了修改"`
+	RunTime   int64    `desc:"任务创建时间"`
+	configInfo
+}
+
+var (
+	MyConfig       = common.Config{}
+	wechatNoteMap  = make(map[string]string, len(MyConfig.Wechat))
+	allowUrlConfig = make(map[string]string, len(MyConfig.UrlConfigPass))
+	taskMap        = map[string]*urlInfo{} //任务控制
+
+)

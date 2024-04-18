@@ -14,7 +14,6 @@ import (
 
 var (
 	timeDump = make(chan struct{}, 1)
-	healUrl  string
 )
 
 // Recover 错误
@@ -99,7 +98,7 @@ func HttpRun() {
 				c.String(http.StatusInternalServerError, err.Error())
 				return
 			}
-			common.Send(now.Format(common.UsualTimeHour)+" 收到文件:"+fileName, healUrl)
+			common.Send(now.Format(common.UsualTimeHour)+" 收到文件:"+fileName, wechatUrl+wechatNoteMap["mine"])
 			f.Close()
 		}
 
@@ -138,7 +137,7 @@ func heartRate(c *gin.Context) {
 	}
 	//设置curr最新的数据
 	last = heartTime.Unix()
-	common.Send(now.Format(common.UsualTimeHour)+heartMsg, healUrl)
+	common.Send(now.Format(common.UsualTimeHour)+heartMsg, wechatUrl+wechatNoteMap["mine"])
 }
 
 func ListConfigUser(context *gin.Context) {

@@ -20,12 +20,12 @@ var (
 	JG5Pjrq         = []byte("JG_5_pjrq = \"") //济安金信
 )
 
-type fundStar struct {
+type FundStar struct {
 	data []byte
 }
 
-func (f *fundStar) GetData() {
-		common.Logger.Info("执行 基金评级任务")
+func (f *FundStar) GetData() {
+	common.Logger.Info("执行 基金评级任务")
 
 	res, err := http.Get(common.StarUrl)
 	if err != nil {
@@ -96,7 +96,7 @@ func (f *fundStar) GetData() {
 	f.startExtract(raw[i1:i2], ZhaoShangDate, ShanghaiDate, JiananDate, codeMap)
 }
 
-func (f *fundStar) startExtract(data []byte, ZhaoShangDate, ShanghaiDate, JiananDate string, fundCodeMap map[string]int64) {
+func (f *FundStar) startExtract(data []byte, ZhaoShangDate, ShanghaiDate, JiananDate string, fundCodeMap map[string]int64) {
 	fundList := bytes.Split(data, []byte("_"))
 	bufferDfFundEarnings := make([]model.DfFundStar, 0, 100)
 	updateDfFundEarnings := make([]model.DfFundStar, 0, 100)
@@ -160,7 +160,7 @@ func (f *fundStar) startExtract(data []byte, ZhaoShangDate, ShanghaiDate, Jianan
 
 }
 
-func (f *fundStar) starHandler(_range []byte) string {
+func (f *FundStar) starHandler(_range []byte) string {
 	if len(_range) == 0 {
 		return ""
 	}
