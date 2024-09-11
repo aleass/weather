@@ -126,5 +126,4 @@ func LogSend(err string, errType ErrorType) {
 	case ErrType, PanicType:
 		Logger.Error(err)
 	}
-	Send(fmt.Sprintf("%s:%s", string(errType), err), ErrorUrl)
 }

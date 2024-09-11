@@ -1,40 +1,52 @@
 package common
 
+import (
+	"fmt"
+	"github.com/spf13/viper"
+	"os"
+)
+
 type Config struct {
 	// 结构映射
-	Wechat []struct {
-		Token string `mapstructure:"token"`
-		Notes string `mapstructure:"note"`
-	} `mapstructure:"wechat"`
-	CaiYun struct {
-		Token  string `json:"token"`
-		Addres []struct {
-			Addr        string `json:"addr"`
-			WechatNotes string `json:"wechatNotes"`
-			Coordinate  string `json:"coordinate"`
-			Switch      bool   `json:"switch" desc:"开关"`
-			AllowWeek   string `json:"allowWeek"`
-		} `json:"addres"`
-	} `json:"caiyun"`
+	HeFeng struct {
+		Key string `mapstructure:"key"`
+	} `mapstructure:"hefeng"`
 
-	UrlConfigPass []struct {
-		Name  string `json:"name"`
-		Notes string `mapstructure:"note"`
-	} `json:"urlConfigPass"`
+	Atmp struct {
+		Key string `mapstructure:"key"`
+		Loc string `mapstructure:"loc"`
+	} `mapstructure:"atmp"`
 
-	GeoMapToken string `json:"geoMapToken"`
-	QqMapToken  string `json:"qqMapToken"`
+	Telegram struct {
+		Token       string `mapstructure:"token"`
+		AddresToken string `mapstructure:"addres_token"`
+		ChatId      int64  `mapstructure:"chat_id"`
+	} `mapstructure:"telegram"`
+}
 
-	DB struct {
-		User     string `json:"user"`
-		Password string `json:"password"`
-		Host     string `json:"host"`
-		DbName   string `json:"dbName"`
-		Port     string `json:"port"`
-	} `json:"db"`
+var (
+	MyConfig = Config{}
+)
 
-	Fund struct {
-		Host  string   `json:"host"`
-		Notes []string `mapstructure:"notes"`
-	} `json:"fund"`
+func init() {
+	var (
+		vip  = viper.New()
+		path = "/Users/tuski/code/src/weather/pkg/config.yaml"
+	)
+	// 使用 os.Stat 函数获取文件的信息
+	_, err := os.Stat(path)
+	// 检查文件是否存在
+	if os.IsNotExist(err) {
+		path = "config.yaml"
+	}
+	vip.SetConfigFile(path)
+	vip.SetConfigType("yaml")
+	vip.ReadInConfig()
+	if err = vip.Unmarshal(&MyConfig); err != nil {
+		panic(fmt.Errorf("无法解析配置文件: %w", err))
+	}
+	key := MyConfig.Atmp.Key
+	if key == "" {
+		panic("key not exist")
+	}
 }
