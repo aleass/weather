@@ -13,7 +13,7 @@ import (
 // 仅支持广州
 const (
 	wdphRain = "https://weixin.tqyb.com.cn/gzweixin//wSituation/weixin_sk_wdph.flow?type=%d&"
-	msgTemp  = "  ● %s  %0.2f\n" //
+	msgTemp  = common.SubStr + "%s  %0.2f\n" //
 )
 
 // 记录地址距离
@@ -69,7 +69,7 @@ func GZWeather(district string) string {
 		})
 		msgMaxLen += 2
 		for _, str := range rainInfos {
-			var formtat = "  ● %s" + strings.Repeat(" ", int(float64(msgMaxLen-len(str.addr))*1.3)) + "%0.2f   	%0.2f km\n"
+			var formtat = common.SubStr + "%s" + strings.Repeat(" ", int(float64(msgMaxLen-len(str.addr))*1.3)) + "%0.2f   	%0.2f km\n"
 			msg += fmt.Sprintf(formtat, str.addr, str.rainfall, str.Dis)
 		}
 	}

@@ -12,6 +12,10 @@ type Config struct {
 		Key string `mapstructure:"key"`
 	} `mapstructure:"hefeng"`
 
+	JuHe struct {
+		Key string `mapstructure:"key"`
+	} `mapstructure:"juhe"`
+
 	Atmp struct {
 		Key string `mapstructure:"key"`
 		Loc string `mapstructure:"loc"`
@@ -19,6 +23,7 @@ type Config struct {
 
 	Telegram struct {
 		Token       string `mapstructure:"token"`
+		Token2      string `mapstructure:"token2"`
 		AddresToken string `mapstructure:"addres_token"`
 		ChatId      int64  `mapstructure:"chat_id"`
 	} `mapstructure:"telegram"`

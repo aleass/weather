@@ -3,20 +3,20 @@ package service
 import (
 	"fmt"
 	"time"
+	"weather/api/juhe"
 	"weather/common"
 )
 
-// 运行
-func Run() {
+func NewsRun(selectTime time.Duration) {
 	defer func() {
 		if err := recover(); err != nil {
 			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
 		}
-		time.Sleep(time.Minute * 10)
-		Run()
+		time.Sleep(selectTime)
+		go NewsRun(selectTime)
 	}()
-
-	go NewsRun(time.Minute * 30)
-	go RunWeather(time.Minute * 30)
-	select {}
+	for {
+		juhe.GetNews()
+		time.Sleep(selectTime)
+	}
 }

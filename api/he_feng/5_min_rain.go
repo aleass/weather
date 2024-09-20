@@ -2,7 +2,6 @@ package he_feng
 
 import (
 	"fmt"
-	"time"
 	"weather/common"
 )
 
@@ -10,19 +9,13 @@ const (
 	realTimeRain = host + "/v7/minutely/5m?location=%s&key=%s"
 )
 
-const titleTemp = `  ● %s（更新时间：%s）
+const titleTemp = common.SubStr + `%s
 `
 
-var nextTemp = `  ● %s  %s
+var nextTemp = common.SubStr + `%s  %s
 `
 
 func FiveMinRain() string {
-	//6-0点
-	var h = time.Now().Hour()
-	if h < 6 {
-		//return ""
-	}
-
 	url := fmt.Sprintf(realTimeRain, common.MyConfig.Atmp.Loc, common.MyConfig.HeFeng.Key)
 	var fiveMinRainRes FiveMinRainRes
 	_, err := common.HttpRequest(common.WeatherType, common.GetType, url, nil, nil, false, &fiveMinRainRes)
@@ -31,7 +24,8 @@ func FiveMinRain() string {
 		return ""
 	}
 
-	var title = fmt.Sprintf(titleTemp, fiveMinRainRes.Summary, fiveMinRainRes.UpdateTime[11:16])
+	//var title = fmt.Sprintf(titleTemp, fiveMinRainRes.Summary, fiveMinRainRes.UpdateTime[11:16])
+	var title = fmt.Sprintf(titleTemp, fiveMinRainRes.Summary)
 	var lastTime string
 	var max, curr = 5, 0
 	for _, s := range fiveMinRainRes.Minutely {
@@ -50,7 +44,7 @@ func FiveMinRain() string {
 			break
 		}
 	}
-	return title
+	return "【五分钟降雨预报】\n" + title
 }
 
 type FiveMinRainRes struct {

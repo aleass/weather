@@ -63,6 +63,8 @@ func CreatePhoto(loc []string, name string, radius7, radius10, radius12 float64)
 		var markers = fmt.Sprintf(",,:%s", loc[len(loc)-1])
 		url += "&markers=" + markers
 	}
+
+	//labels
 	//url += "&labels=" + labels
 
 	resp, err := common.HttpRequest(common.MapType, common.GetType, url, nil, nil, false, nil)

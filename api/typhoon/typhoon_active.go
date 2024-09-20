@@ -16,11 +16,6 @@ const (
 `
 )
 
-var header = [][2]string{
-	{"Host", "typhoon.slt.zj.gov.cn"},
-	{"User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"},
-}
-
 var (
 	lastUpdate string
 	lastPoint  = &PointsInfo{}
@@ -29,7 +24,7 @@ var (
 // 有台风1小时 否则1天
 func TyphoonActive() string {
 	var typhoonActiveResp []TyphoonActiveResp
-	_, err := common.HttpRequest(common.OtherType, common.GetType, typhoonActiveUrl, nil, header, false, &typhoonActiveResp)
+	_, err := common.HttpRequest(common.OtherType, common.GetType, typhoonActiveUrl, nil, common.Header, false, &typhoonActiveResp)
 	if err != nil {
 		common.Logger.Error(err.Error())
 		return ""
@@ -65,7 +60,7 @@ func TyphoonActive() string {
 		if resp == nil {
 			continue
 		}
-		telegram.SendPhoto(resp, v.Name)
+		telegram.SendPhoto(resp, v.Name, "")
 	}
 	return message
 }

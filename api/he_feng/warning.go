@@ -25,7 +25,7 @@ func CityWarning() (string, string) {
 	var title, text = "【预警】", ""
 	for _, s := range warningRes.Warning {
 		title += s.Title + " "
-		text += s.Text + "\n"
+		text += s.Text + "\n\n"
 	}
 	title += "\n"
 	return title, text
