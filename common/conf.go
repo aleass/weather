@@ -16,6 +16,10 @@ type Config struct {
 		Key string `mapstructure:"key"`
 	} `mapstructure:"juhe"`
 
+	Tian struct {
+		Key string `mapstructure:"key"`
+	} `mapstructure:"tian"`
+
 	Atmp struct {
 		Key string `mapstructure:"key"`
 		Loc string `mapstructure:"loc"`

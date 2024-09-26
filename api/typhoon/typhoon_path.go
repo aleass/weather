@@ -12,7 +12,7 @@ const (
 func TyphoonPath(tyId string) ([]string, *PointsInfo) {
 	var typhoonResp TyphoonResp
 	var url = typhoonPathUrl + tyId
-	_, err := common.HttpRequest(common.OtherType, common.GetType, url, nil, header, false, &typhoonResp)
+	_, err := common.HttpRequest(common.OtherType, common.GetType, url, nil, common.Header, false, &typhoonResp)
 	if err != nil {
 		common.Logger.Error(err.Error())
 		return nil, nil
