@@ -6,5 +6,6 @@ const (
 )
 
 const (
-	SubStr = "     ● "
+	SubStr      = "     ● "
+	FileKeyPath = "/Users/tuski/code/src/weather/"
 )

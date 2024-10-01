@@ -14,6 +14,7 @@ var AmtpApiCount, HeFengApiCount int
 
 var Header = [][2]string{
 	{"Host", "typhoon.slt.zj.gov.cn"},
+	{"Content-Type", "application/x-www-form-urlencoded"},
 	{"User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"},
 }
 
@@ -59,9 +60,16 @@ func HttpRequest(types, method HttpMethod, url string, body interface{}, header 
 	case WeatherType:
 		HeFengApiCount++
 	}
-	buff := new(bytes.Buffer)
-	err := json.NewEncoder(buff).Encode(body)
-	req, err := http.NewRequest(method.toString(), url, buff)
+	var (
+		reader = &bytes.Buffer{}
+		err    error
+	)
+	if body != nil {
+		reader = new(bytes.Buffer)
+		err = json.NewEncoder(reader).Encode(body)
+	}
+
+	req, err := http.NewRequest(method.toString(), url, reader)
 	if err != nil {
 		return nil, err
 	}

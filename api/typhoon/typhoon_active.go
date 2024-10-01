@@ -12,7 +12,7 @@ import (
 const (
 	typhoonActiveUrl = "https://typhoon.slt.zj.gov.cn/Api/TyhoonActivity"
 	temp             = `【台风】%s级%s-%s
- ● 风速：%sm/s，距离：%0.2fkm，风圈：%skm，%s
+     ● 风速：%sm/s，距离：%0.2fkm，风圈：%skm，%s
 `
 )
 

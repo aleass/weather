@@ -17,7 +17,7 @@ var (
 
 func GetNews() {
 	if lastUniquekey == "" {
-		bytes, _ := os.ReadFile("new2_key")
+		bytes, _ := os.ReadFile(common.FileKeyPath + "new2_key")
 		lastUniquekey = string(bytes)
 	}
 
@@ -29,7 +29,7 @@ func GetNews() {
 		common.Logger.Error(err.Error())
 		return
 	}
-	os.WriteFile("/Users/tuski/code/src/weather/temp2.txt", raw, 0777)
+	os.WriteFile(common.FileKeyPath+"temp2.txt", raw, 0777)
 
 	if len(newsResponse.Result.Newslist) == 0 {
 		common.Logger.Error(newsResponse.Msg)
@@ -48,7 +48,7 @@ func GetNews() {
 
 	if lastUniquekey != newsResponse.Result.Newslist[0].Id {
 		lastUniquekey = newsResponse.Result.Newslist[0].Id
-		os.WriteFile("new2_key", []byte(lastUniquekey), 0777)
+		os.WriteFile(common.FileKeyPath+"new2_key", []byte(lastUniquekey), 0777)
 	}
 
 	for i := len(msgList) - 1; i >= 0; i-- {

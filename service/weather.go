@@ -44,7 +44,7 @@ func RunWeather(selectTime time.Duration) {
 		//获取实时 y
 		var realData string
 		if ok {
-			realData = "\n" + gz_weather.GZWeather(loc)
+			realData = gz_weather.GZWeather(loc)
 		}
 
 		warningTitle, warningText := he_feng.CityWarning()
@@ -70,6 +70,7 @@ func RunWeather(selectTime time.Duration) {
 		}
 
 		if sendMsg != "" {
+			sendMsg += "\n" + now.Format(addr+" 15:04")
 			lastUpdateHour = now.Unix()
 			telegram.SendMessage(sendMsg, common.MyConfig.Telegram.Token)
 			lastUpdateMsg = msg

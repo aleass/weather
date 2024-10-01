@@ -40,7 +40,7 @@ var (
 func init() {
 	var (
 		vip  = viper.New()
-		path = "/Users/tuski/code/src/weather/pkg/config.yaml"
+		path = FileKeyPath + "pkg/config.yaml"
 	)
 	// 使用 os.Stat 函数获取文件的信息
 	_, err := os.Stat(path)

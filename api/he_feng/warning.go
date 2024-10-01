@@ -27,7 +27,7 @@ func CityWarning() (string, string) {
 		title += s.Title + " "
 		text += s.Text + "\n\n"
 	}
-	title += "\n"
+	title += "\n\n"
 	return title, text
 }
 

@@ -3,7 +3,6 @@ package juhe
 import (
 	"fmt"
 	"os"
-	"time"
 	"weather/api/telegram"
 	"weather/common"
 )
@@ -28,7 +27,7 @@ var (
 
 func GetNews() {
 	if lastUniquekey == "" {
-		bytes, _ := os.ReadFile("new_key")
+		bytes, _ := os.ReadFile(common.FileKeyPath + "new_key")
 		lastUniquekey = string(bytes)
 	}
 
@@ -40,7 +39,7 @@ func GetNews() {
 		common.Logger.Error(err.Error())
 		return
 	}
-	os.WriteFile("/Users/tuski/code/src/weather/temp.txt", raw, 0777)
+	os.WriteFile(common.FileKeyPath+"temp.txt", raw, 0777)
 
 	if len(newsResponse.Result.Data) == 0 {
 		common.Logger.Error(newsResponse.Reason)
@@ -72,10 +71,9 @@ func GetNews() {
 
 	if lastUniquekey != newsResponse.Result.Data[0].Uniquekey {
 		lastUniquekey = newsResponse.Result.Data[0].Uniquekey
-		os.WriteFile("new_key", []byte(lastUniquekey), 0777)
+		os.WriteFile(common.FileKeyPath+"new_key", []byte(lastUniquekey), 0777)
 	}
 
-	telegram.SendMessage("————————————————————"+time.Now().Format("2006-01-02 15:04:05"), common.MyConfig.Telegram.Token2)
 	for i := len(msgList) - 1; i >= 0; i-- {
 		telegram.SendMessage(msgList[i], common.MyConfig.Telegram.Token2)
 	}
