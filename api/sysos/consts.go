@@ -1,0 +1,5 @@
+package sysos
+
+var (
+	OSPower = ""
+)

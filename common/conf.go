@@ -42,7 +42,7 @@ func init() {
 		vip  = viper.New()
 		path = FileKeyPath + "pkg/config.yaml"
 	)
-	// 使用 os.Stat 函数获取文件的信息
+	// 使用 sysos.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
 	// 检查文件是否存在
 	if os.IsNotExist(err) {

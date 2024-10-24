@@ -32,7 +32,7 @@ func GetNews() {
 	}
 
 	var newsResponse NewsResponse
-	//var ss,_ = os.ReadFile("temp.txt")
+	//var ss,_ = sysos.ReadFile("temp.txt")
 	//json.Unmarshal(ss, &newsResponse)
 	raw, err := common.HttpRequest(common.WeatherType, common.GetType, newUrl+common.MyConfig.JuHe.Key, nil, nil, false, &newsResponse)
 	if err != nil {

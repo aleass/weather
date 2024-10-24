@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"fmt"
+	"time"
 	"weather/common"
 )
 
@@ -26,6 +27,62 @@ func SendMessage(info, token string) int64 {
 		common.Logger.Error(resp.Result.Text)
 	}
 	return resp.Result.MessageId
+}
+
+var messagedId = 0
+
+func GetAddress() (ok bool) {
+	url := fmt.Sprintf(pullUrl+"getUpdates", common.MyConfig.Telegram.AddresToken)
+	var msg = Msg{
+		Offset: messagedId,
+	}
+	var resp getUpdatesResp
+	_, err := common.HttpRequest(common.OtherType, common.PostType, url, msg, nil, true, &resp)
+	if err != nil {
+		common.Logger.Error(err.Error())
+		return
+	}
+	var l = len(resp.Result)
+	if l == 0 {
+		return
+	}
+
+	message := resp.Result[l-1]
+	if messagedId == message.UpdateId || time.Now().Unix()-message.Message.Date > 5*60 {
+		return
+	}
+
+	common.MyConfig.Atmp.Loc = message.Message.Text
+	messagedId = message.UpdateId
+	ok = true
+	return
+}
+
+type getUpdatesResp struct {
+	Ok     bool `json:"ok"`
+	Result []struct {
+		UpdateId int `json:"update_id"`
+		Message  struct {
+			MessageId int `json:"message_id"`
+			From      struct {
+				Id           int    `json:"id"`
+				IsBot        bool   `json:"is_bot"`
+				FirstName    string `json:"first_name"`
+				LastName     string `json:"last_name"`
+				Username     string `json:"username"`
+				LanguageCode string `json:"language_code"`
+			} `json:"from"`
+			Chat struct {
+				Id        int    `json:"id"`
+				FirstName string `json:"first_name"`
+				LastName  string `json:"last_name"`
+				Username  string `json:"username"`
+				Type      string `json:"type"`
+			} `json:"chat"`
+			Date int64  `json:"date"`
+			Text string `json:"text"`
+		} `json:"message"`
+	} `json:"result"`
 }
 
 type Msg struct {
@@ -54,56 +111,5 @@ type Response struct {
 		} `json:"chat"`
 		Date int    `json:"date"`
 		Text string `json:"text"`
-	} `json:"result"`
-}
-
-var messagedId = 0
-
-func GetAddress() (ok bool) {
-	url := fmt.Sprintf(pullUrl+"getUpdates", common.MyConfig.Telegram.AddresToken)
-	var msg = Msg{
-		Offset: messagedId,
-	}
-	var resp getUpdatesResp
-	_, err := common.HttpRequest(common.OtherType, common.PostType, url, msg, nil, true, &resp)
-	if err != nil {
-		common.Logger.Error(err.Error())
-		return ok
-	}
-	for _, s := range resp.Result {
-		if messagedId == s.UpdateId {
-			continue
-		}
-		common.MyConfig.Atmp.Loc = s.Message.Text
-		messagedId = s.UpdateId
-		ok = true
-	}
-	return ok
-}
-
-type getUpdatesResp struct {
-	Ok     bool `json:"ok"`
-	Result []struct {
-		UpdateId int `json:"update_id"`
-		Message  struct {
-			MessageId int `json:"message_id"`
-			//From      struct {
-			//	Id           int    `json:"id"`
-			//	IsBot        bool   `json:"is_bot"`
-			//	FirstName    string `json:"first_name"`
-			//	LastName     string `json:"last_name"`
-			//	Username     string `json:"username"`
-			//	LanguageCode string `json:"language_code"`
-			//} `json:"from"`
-			//Chat struct {
-			//	Id        int    `json:"id"`
-			//	FirstName string `json:"first_name"`
-			//	LastName  string `json:"last_name"`
-			//	Username  string `json:"username"`
-			//	Type      string `json:"type"`
-			//} `json:"chat"`
-			//Date int    `json:"date"`
-			Text string `json:"text"`
-		} `json:"message"`
 	} `json:"result"`
 }

@@ -23,6 +23,9 @@ func FiveMinRain() string {
 		common.Logger.Error(err.Error())
 		return ""
 	}
+	if len(fiveMinRainRes.Minutely) == 0 || fiveMinRainRes.Summary == "未来两小时无降水" {
+		return ""
+	}
 
 	//var title = fmt.Sprintf(titleTemp, fiveMinRainRes.Summary, fiveMinRainRes.UpdateTime[11:16])
 	var title = fmt.Sprintf(titleTemp, fiveMinRainRes.Summary)
@@ -44,7 +47,7 @@ func FiveMinRain() string {
 			break
 		}
 	}
-	return "【五分钟降雨预报】\n" + title
+	return "【五分钟降雨预报】\n" + title + "\n"
 }
 
 type FiveMinRainRes struct {

@@ -13,7 +13,7 @@ const (
 // 地址查询
 // 地址
 // 经纬度
-func CreatePhoto(loc []string, name string, radius7, radius10, radius12 float64) *bytes.Reader {
+func CreatePhoto(loc []string, dis, radius7, radius10, radius12 float64) *bytes.Reader {
 	//生产参数
 	//台风路径
 	paths := "2,0x0000FF,0.2,,:"
@@ -53,7 +53,7 @@ func CreatePhoto(loc []string, name string, radius7, radius10, radius12 float64)
 		//markers = fmt.Sprintf(",,:%s", loc[len(loc)-1])
 		location = loc[len(loc)-1]
 		size     = "500*500"
-		zoom     = 5
+		zoom     = zoomHandler(dis)
 	)
 
 	url := fmt.Sprintf(createPhotoUrl, paths, location, key, zoom, size)
@@ -73,4 +73,27 @@ func CreatePhoto(loc []string, name string, radius7, radius10, radius12 float64)
 		return nil
 	}
 	return bytes.NewReader(resp)
+}
+
+// 3 1000
+// 4 500
+// 5 200
+// 6 100
+// 7 50
+// 根据距离 计算缩放
+func zoomHandler(dis float64) int {
+	if dis <= 0 {
+		return 3
+	}
+	switch {
+	case dis > 500:
+		return 3
+	case dis > 200:
+		return 4
+	case dis > 100:
+		return 5
+	case dis > 50:
+		return 7
+	}
+	return 7
 }

@@ -56,7 +56,7 @@ func TyphoonActive() string {
 		message += fmt.Sprintf(temp, v.Power, v.Strong, v.Name, v.Speed, dis, radius7, lastes.Time[11:16])
 		radius12 := radiusHanlder(lastes.Radius12)
 		radius10 := radiusHanlder(lastes.Radius10)
-		resp := atmp.CreatePhoto(loc, v.Name, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
+		resp := atmp.CreatePhoto(loc, dis, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
 		if resp == nil {
 			continue
 		}

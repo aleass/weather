@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"time"
+	"weather/api/sysos"
 	"weather/common"
 )
 
@@ -15,6 +16,9 @@ func Run() {
 		time.Sleep(time.Minute * 10)
 		Run()
 	}()
+
+	//10000ms
+	go sysos.GetPowermetrics("600000")
 
 	go NewsRun(time.Minute * 30)
 	go RunWeather(time.Minute * 30)

@@ -77,18 +77,22 @@ func GZWeather(district string) string {
 qu:
 	//全区
 	weatherData = handler(2, encoded)
-	if weatherData == nil {
+	if weatherData == nil || len(weatherData.ParamBuf) == 0 {
 		return msg
 	}
-	msg += "\n【全市区降水检测点】\n"
+	var rainIinfo string
 	for _, v := range weatherData.ParamBuf {
 		if v.Col2 == 0 {
 			continue
 		}
-		msg += fmt.Sprintf(msgTemp, v.Col1, v.Col2)
+		rainIinfo += fmt.Sprintf(msgTemp, v.Col1, v.Col2)
+	}
+	if rainIinfo == "" {
+		return msg
 	}
 
-	return msg + "\n"
+	msg += "【全市区降水检测点】\n" + rainIinfo
+	return msg
 }
 
 type rainInfo struct {

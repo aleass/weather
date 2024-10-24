@@ -6,30 +6,40 @@ import (
 	"weather/api/atmp"
 	"weather/api/gz_weather"
 	"weather/api/he_feng"
+	"weather/api/sysos"
 	"weather/api/telegram"
 	"weather/api/typhoon"
 	"weather/common"
 )
 
-func RunWeather(selectTime time.Duration) {
+func RunWeather(sleepTimes time.Duration) {
 	defer func() {
 		if err := recover(); err != nil {
 			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
 		}
-		time.Sleep(selectTime)
-		go RunWeather(selectTime)
+		time.Sleep(sleepTimes)
+		go RunWeather(sleepTimes)
 	}()
 
 	var (
 		lastUpdateMsg  string
 		lastUpdateHour int64
+		newAddr        = make(chan bool, 1)
+		isNewAddr      bool
 	)
+	go isNewAddress(newAddr)
 
 	for {
-		now := time.Now()
+		var (
+			sendMsg string
+			weather string
+			now     = time.Now()
+		)
 
 		//获取地址
-		var isNewAddr = telegram.GetAddress()
+		if !isNewAddr {
+			isNewAddr = telegram.GetAddress()
+		}
 
 		//typhoon per hour
 		typhoonMsg := typhoon.TyphoonActive()
@@ -41,7 +51,7 @@ func RunWeather(selectTime time.Duration) {
 		//loc, addr, ok := he_feng.Lookup()
 		loc, addr, ok := atmp.SearchByLonLac(common.MyConfig.Atmp.Loc)
 
-		//获取实时 y
+		//获取实时降雨量测试点
 		var realData string
 		if ok {
 			realData = gz_weather.GZWeather(loc)
@@ -49,42 +59,58 @@ func RunWeather(selectTime time.Duration) {
 
 		warningTitle, warningText := he_feng.CityWarning()
 
+		weather = he_feng.WeatherInfo()
+
 		//推送
 		msg := warningTitle + rainInfo + typhoonMsg + warningText
 
-		var (
-			sendMsg string
-			weather string
-		)
-
-		//【天气】25° 阴 西北风10m/s 小时降雨：0.0 能见度：17
-		if lastUpdateMsg == "" || isNewAddr || now.Unix()-3600*5 > lastUpdateHour {
-			weather = he_feng.WeatherInfo()
-		}
+		switch {
+		//初次发送 地址变更 离上次更新时间大于一小时
+		case lastUpdateMsg == "" || isNewAddr || now.Unix()-3600*5 > lastUpdateHour:
+			sendMsg = weather + warningTitle + rainInfo + realData + typhoonMsg + warningText
 
 		//消息变更
-		if lastUpdateMsg != msg {
+		case lastUpdateMsg != msg:
 			sendMsg = warningTitle + rainInfo + realData + weather + typhoonMsg + warningText
-		} else if weather != "" { //地址变更 离上次更新时间大于一小时
-			sendMsg = weather + warningTitle + rainInfo + realData + typhoonMsg + warningText
 		}
 
 		if sendMsg != "" {
-			sendMsg += "\n" + now.Format(addr+" 15:04")
 			lastUpdateHour = now.Unix()
-			telegram.SendMessage(sendMsg, common.MyConfig.Telegram.Token)
 			lastUpdateMsg = msg
+
+			sendMsg += addr + now.Format(" 15:04 ") + sysos.OSPower
+			telegram.SendMessage(sendMsg, common.MyConfig.Telegram.Token)
+			common.Logger.Info(sendMsg)
 		}
 
-		var used = fmt.Sprintf("\n%s %s  MapApi：%d 	WeatherApi：%d\n\n", addr, now.Format("15:04"), common.AmtpApiCount, common.HeFengApiCount)
+		var used = fmt.Sprintf("%s %s  MapApi:%d,WeatherApi:%d", addr, now.Format("15:04"), common.AmtpApiCount, common.HeFengApiCount)
 		common.Logger.Info(used)
+		isNewAddr = false
 
+		//正常睡眠
+		var curSleepTime = time.After(sleepTimes)
 		var h = now.Hour()
 		switch {
 		case h < 6:
-			time.Sleep(selectTime)
+			curSleepTime = time.After(sleepTimes * 2)
 		}
 
-		time.Sleep(selectTime)
+		select {
+		case <-curSleepTime: //正常睡眠
+			break
+		case <-newAddr: //新地址马上触发
+			isNewAddr = true
+			break
+		}
+	}
+}
+
+// 定时检测新地址
+func isNewAddress(newAddr chan bool) {
+	for {
+		time.Sleep(time.Minute)
+		if telegram.GetAddress() {
+			newAddr <- true
+		}
 	}
 }

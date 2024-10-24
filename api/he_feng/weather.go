@@ -19,9 +19,9 @@ func WeatherInfo() string {
 		return ""
 	}
 
-	var weather = "【天气】%s° %s %s%sm/s 能见度：%s\n\n"
+	var weather = "【天气】\n%s%s° %s %s%sm/s 能见度：%s\n\n"
 
-	return fmt.Sprintf(weather, weatherResp.Now.Temp, weatherResp.Now.Text, weatherResp.Now.WindDir, weatherResp.Now.WindSpeed, weatherResp.Now.Vis)
+	return fmt.Sprintf(weather, common.SubStr, weatherResp.Now.Temp, weatherResp.Now.Text, weatherResp.Now.WindDir, weatherResp.Now.WindSpeed, weatherResp.Now.Vis)
 }
 
 type WeatherResp struct {
