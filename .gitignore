@@ -6,3 +6,5 @@
 /temp.txt
 /new2_key
 /temp2.txt
+/services
+/service/server_test.go
