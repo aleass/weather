@@ -3,7 +3,7 @@ package telegram
 import (
 	"fmt"
 	"io"
-	"weather/common"
+	"services/common"
 )
 
 func SendPhoto(file io.Reader, name string, messageId string) {

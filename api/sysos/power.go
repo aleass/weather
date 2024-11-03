@@ -1,7 +1,7 @@
 package sysos
 
 import (
-	"weather/common"
+	"services/common"
 )
 
 func handlerPower(line string) {

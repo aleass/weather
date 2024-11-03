@@ -5,7 +5,7 @@ const (
 	UsualDate = "2006-01-02 15:04:05"
 )
 
-const (
+var (
 	SubStr      = "     ● "
-	FileKeyPath = "/Users/tuski/code/src/weather/"
+	FileKeyPath = "./"
 )

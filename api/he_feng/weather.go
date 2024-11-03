@@ -2,7 +2,7 @@ package he_feng
 
 import (
 	"fmt"
-	"weather/common"
+	"services/common"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 
 // 地区 全名 是否广州内
 func WeatherInfo() string {
-	url := fmt.Sprintf(weatherUrl, common.MyConfig.Atmp.Loc, common.MyConfig.HeFeng.Key)
+	url := fmt.Sprintf(weatherUrl, common.MyConfig.Home.Loc, common.MyConfig.HeFeng.Key)
 	var weatherResp WeatherResp
 	_, err := common.HttpRequest(common.WeatherType, common.GetType, url, nil, nil, false, &weatherResp)
 	if err != nil {

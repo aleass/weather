@@ -1,21 +1,14 @@
 package service
 
 import (
-	"fmt"
+	"services/api/juhe"
+	"services/api/tian"
+	"services/common"
 	"time"
-	"weather/api/juhe"
-	"weather/api/tian"
-	"weather/common"
 )
 
 func NewsRun(selectTime time.Duration) {
-	defer func() {
-		if err := recover(); err != nil {
-			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
-		}
-		time.Sleep(selectTime)
-		go NewsRun(selectTime)
-	}()
+	defer common.RecoverWithStackTrace(RunWeather, selectTime)
 
 	for {
 		var now = time.Now()

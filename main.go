@@ -1,6 +1,6 @@
 package main
 
-import "weather/service"
+import "services/service"
 
 func main() {
 	service.Run()

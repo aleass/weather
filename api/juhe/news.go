@@ -3,8 +3,8 @@ package juhe
 import (
 	"fmt"
 	"os"
-	"weather/api/telegram"
-	"weather/common"
+	"services/api/telegram"
+	"services/common"
 )
 
 const (

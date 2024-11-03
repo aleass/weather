@@ -2,6 +2,7 @@ package common
 
 import (
 	"strconv"
+	"strings"
 )
 
 func Str2Int64(val string) int64 {
@@ -47,4 +48,22 @@ func CountChineseCharacters(s string) int {
 		}
 	}
 	return count
+}
+
+// 检查经纬度合法
+func CheckLoc(loc string) bool {
+	data := strings.Split(loc, ",")
+	if len(data) != 2 {
+		return false
+	}
+	long := Str2Float64(data[0])
+	lat := Str2Float64(data[1])
+	if long > 180 || long < -180 {
+		return false
+	}
+	if lat > 85 || lat < -85 {
+		return false
+	}
+
+	return true
 }

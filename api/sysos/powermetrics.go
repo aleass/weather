@@ -4,12 +4,17 @@ import (
 	"bufio"
 	"fmt"
 	"os/exec"
+	"services/common"
 )
 
 var command = []string{"powermetrics", "-i", "10000", "-s", "cpu_power"}
 
 // 获取系统信息
 func GetPowermetrics(initial string) {
+	if !common.MyConfig.System.WatchPower {
+		return
+	}
+
 	if len(command) == 0 {
 		return
 	}

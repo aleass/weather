@@ -4,14 +4,14 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/url"
+	"services/api/atmp"
+	"services/common"
 	"sort"
 	"strings"
-	"weather/api/atmp"
-	"weather/common"
 )
 
 // 仅支持广州
-const (
+var (
 	wdphRain = "https://weixin.tqyb.com.cn/gzweixin//wSituation/weixin_sk_wdph.flow?type=%d&"
 	msgTemp  = common.SubStr + "%s  %0.2f\n" //
 )
@@ -28,7 +28,7 @@ func GZWeather(district string) string {
 
 	// 编码成 URL 查询字符串
 	encoded := values.Encode()
-	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Atmp.Loc)
+	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Home.Loc)
 
 	var (
 		msg         string
@@ -77,10 +77,11 @@ func GZWeather(district string) string {
 qu:
 	//全区
 	weatherData = handler(2, encoded)
-	if weatherData == nil || len(weatherData.ParamBuf) == 0 {
-		return msg
-	}
 	var rainIinfo string
+	if weatherData == nil || len(weatherData.ParamBuf) == 0 {
+		goto ret
+	}
+
 	for _, v := range weatherData.ParamBuf {
 		if v.Col2 == 0 {
 			continue
@@ -88,11 +89,13 @@ qu:
 		rainIinfo += fmt.Sprintf(msgTemp, v.Col1, v.Col2)
 	}
 	if rainIinfo == "" {
-		return msg
+		goto ret
 	}
 
 	msg += "【全市区降水检测点】\n" + rainIinfo
-	return msg
+
+ret:
+	return msg + "\n"
 }
 
 type rainInfo struct {

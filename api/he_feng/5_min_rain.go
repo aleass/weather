@@ -2,21 +2,21 @@ package he_feng
 
 import (
 	"fmt"
-	"weather/common"
+	"services/common"
 )
 
 const (
 	realTimeRain = host + "/v7/minutely/5m?location=%s&key=%s"
 )
 
-const titleTemp = common.SubStr + `%s
+var titleTemp = common.SubStr + `%s
 `
 
 var nextTemp = common.SubStr + `%s  %s
 `
 
 func FiveMinRain() string {
-	url := fmt.Sprintf(realTimeRain, common.MyConfig.Atmp.Loc, common.MyConfig.HeFeng.Key)
+	url := fmt.Sprintf(realTimeRain, common.MyConfig.Home.Loc, common.MyConfig.HeFeng.Key)
 	var fiveMinRainRes FiveMinRainRes
 	_, err := common.HttpRequest(common.WeatherType, common.GetType, url, nil, nil, false, &fiveMinRainRes)
 	if err != nil {

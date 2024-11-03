@@ -2,7 +2,7 @@ package he_feng
 
 import (
 	"fmt"
-	"weather/common"
+	"services/common"
 )
 
 const (
@@ -13,11 +13,11 @@ var used = [3]string{}
 
 // 地区 全名 是否广州内
 func Lookup() (string, string, bool) {
-	if used[0] == common.MyConfig.Atmp.Loc {
+	if used[0] == common.MyConfig.Home.Loc {
 		return used[1], used[2], true
 	}
 
-	url := fmt.Sprintf(LookupUrl, common.MyConfig.Atmp.Loc, common.MyConfig.HeFeng.Key)
+	url := fmt.Sprintf(LookupUrl, common.MyConfig.Home.Loc, common.MyConfig.HeFeng.Key)
 	var cityRes CityResponse
 	_, err := common.HttpRequest(common.WeatherType, common.GetType, url, nil, nil, false, &cityRes)
 	if err != nil {
@@ -28,7 +28,7 @@ func Lookup() (string, string, bool) {
 	for _, v := range cityRes.Location {
 		used[2] = v.Adm1 + v.Adm2 + v.Name
 		if v.Adm2 == "广州" { //目前只支持广州
-			used[0] = common.MyConfig.Atmp.Loc
+			used[0] = common.MyConfig.Home.Loc
 			used[1] = v.Name
 			return used[1], used[2], true
 		}

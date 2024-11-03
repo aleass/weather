@@ -2,7 +2,7 @@ package atmp
 
 import (
 	"fmt"
-	"weather/common"
+	"services/common"
 )
 
 const (

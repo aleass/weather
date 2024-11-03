@@ -2,11 +2,11 @@ package typhoon
 
 import (
 	"fmt"
+	"services/api/atmp"
+	"services/api/telegram"
+	"services/common"
 	"strings"
 	"time"
-	"weather/api/atmp"
-	"weather/api/telegram"
-	"weather/common"
 )
 
 const (
@@ -32,14 +32,14 @@ func TyphoonActive() string {
 	if len(typhoonActiveResp) == 0 {
 		return ""
 	}
-	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Atmp.Loc)
+	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Home.Loc)
 	var message string
 	for _, v := range typhoonActiveResp {
 		//计算距离，大于1000公里跳过
 		dis := common.Haversine(common.Str2Float64(v.Lng), common.Str2Float64(v.Lat), lonSelf, latSelf)
-		if dis > 1000 {
-			continue
-		}
+		//if dis > 1000 {
+		//	continue
+		//}
 
 		//如果数据没变化不更新
 		if v.Timeformate == lastUpdate {

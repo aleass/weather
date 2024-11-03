@@ -2,7 +2,7 @@ package typhoon
 
 import (
 	"fmt"
-	"weather/common"
+	"services/common"
 )
 
 const (

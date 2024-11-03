@@ -2,8 +2,8 @@ package telegram
 
 import (
 	"fmt"
+	"services/common"
 	"time"
-	"weather/common"
 )
 
 const (
@@ -52,7 +52,7 @@ func GetAddress() (ok bool) {
 		return
 	}
 
-	common.MyConfig.Atmp.Loc = message.Message.Text
+	common.MyConfig.Home.Loc = message.Message.Text
 	messagedId = message.UpdateId
 	ok = true
 	return

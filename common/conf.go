@@ -22,8 +22,17 @@ type Config struct {
 
 	Atmp struct {
 		Key string `mapstructure:"key"`
-		Loc string `mapstructure:"loc"`
 	} `mapstructure:"atmp"`
+
+	Home struct {
+		Loc string `mapstructure:"loc"`
+	} `mapstructure:"home"`
+
+	System struct {
+		RootPath   string `mapstructure:"root_path"`
+		IsProxy    bool   `mapstructure:"is_proxy"`
+		WatchPower bool   `mapstructure:"watch_power"`
+	} `mapstructure:"system"`
 
 	Telegram struct {
 		Token       string `mapstructure:"token"`
@@ -42,6 +51,7 @@ func init() {
 		vip  = viper.New()
 		path = FileKeyPath + "pkg/config.yaml"
 	)
+
 	// 使用 sysos.Stat 函数获取文件的信息
 	_, err := os.Stat(path)
 	// 检查文件是否存在
@@ -56,6 +66,11 @@ func init() {
 	}
 	key := MyConfig.Atmp.Key
 	if key == "" {
-		panic("key not exist")
+		wd, _ := os.Getwd()
+		panic("key not exist:" + wd)
+	}
+
+	if MyConfig.System.RootPath != "" {
+		FileKeyPath = MyConfig.System.RootPath
 	}
 }

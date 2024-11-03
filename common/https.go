@@ -33,6 +33,10 @@ func (m HttpMethod) toString() string {
 }
 
 func proxy() *http.Client {
+	client := &http.Client{}
+	if !MyConfig.System.IsProxy {
+		return client
+	}
 	// 设置代理
 	proxyURL, err := url.Parse("http://127.0.0.1:7890")
 	if err != nil {
@@ -41,10 +45,8 @@ func proxy() *http.Client {
 	}
 
 	// 创建 HTTP 客户端并设置代理
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyURL),
-		},
+	client.Transport = &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
 	}
 	return client
 }
@@ -79,7 +81,7 @@ func HttpRequest(types, method HttpMethod, url string, body interface{}, header 
 	req.Header.Set("content-type", "application/json; charset=UTF-8")
 
 	client := &http.Client{}
-	if isProxy {
+	if isProxy && MyConfig.System.IsProxy {
 		client = proxy()
 	}
 	response, err := client.Do(req)

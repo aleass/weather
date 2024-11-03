@@ -2,32 +2,26 @@ package service
 
 import (
 	"fmt"
+	"services/api/atmp"
+	"services/api/gz_weather"
+	"services/api/he_feng"
+	"services/api/sysos"
+	"services/api/telegram"
+	"services/api/typhoon"
+	"services/common"
 	"time"
-	"weather/api/atmp"
-	"weather/api/gz_weather"
-	"weather/api/he_feng"
-	"weather/api/sysos"
-	"weather/api/telegram"
-	"weather/api/typhoon"
-	"weather/common"
 )
 
-func RunWeather(sleepTimes time.Duration) {
-	defer func() {
-		if err := recover(); err != nil {
-			common.LogSend(fmt.Sprintf("panic err:%v", err), common.PanicType)
-		}
-		time.Sleep(sleepTimes)
-		go RunWeather(sleepTimes)
-	}()
+var NewAddr = make(chan bool, 1)
 
+func RunWeather(sleepTimes time.Duration) {
+	defer common.RecoverWithStackTrace(RunWeather, sleepTimes)
 	var (
 		lastUpdateMsg  string
 		lastUpdateHour int64
-		newAddr        = make(chan bool, 1)
 		isNewAddr      bool
 	)
-	go isNewAddress(newAddr)
+	//go isNewAddress(newAddr)
 
 	for {
 		var (
@@ -37,9 +31,7 @@ func RunWeather(sleepTimes time.Duration) {
 		)
 
 		//获取地址
-		if !isNewAddr {
-			isNewAddr = telegram.GetAddress()
-		}
+		telegram.GetAddress()
 
 		//typhoon per hour
 		typhoonMsg := typhoon.TyphoonActive()
@@ -49,7 +41,7 @@ func RunWeather(sleepTimes time.Duration) {
 
 		//获取位置
 		//loc, addr, ok := he_feng.Lookup()
-		loc, addr, ok := atmp.SearchByLonLac(common.MyConfig.Atmp.Loc)
+		loc, addr, ok := atmp.SearchByLonLac(common.MyConfig.Home.Loc)
 
 		//获取实时降雨量测试点
 		var realData string
@@ -62,10 +54,10 @@ func RunWeather(sleepTimes time.Duration) {
 		weather = he_feng.WeatherInfo()
 
 		//推送
-		msg := warningTitle + rainInfo + typhoonMsg + warningText
+		msg := addr + warningTitle + rainInfo + typhoonMsg + warningText
 
 		switch {
-		//初次发送 地址变更 离上次更新时间大于一小时
+		//初次发送 地址变更 离上次更新时间大于5小时
 		case lastUpdateMsg == "" || isNewAddr || now.Unix()-3600*5 > lastUpdateHour:
 			sendMsg = weather + warningTitle + rainInfo + realData + typhoonMsg + warningText
 
@@ -98,7 +90,7 @@ func RunWeather(sleepTimes time.Duration) {
 		select {
 		case <-curSleepTime: //正常睡眠
 			break
-		case <-newAddr: //新地址马上触发
+		case <-NewAddr: //新地址马上触发
 			isNewAddr = true
 			break
 		}
@@ -106,11 +98,11 @@ func RunWeather(sleepTimes time.Duration) {
 }
 
 // 定时检测新地址
-func isNewAddress(newAddr chan bool) {
-	for {
-		time.Sleep(time.Minute)
-		if telegram.GetAddress() {
-			newAddr <- true
-		}
-	}
-}
+//func isNewAddress(newAddr chan bool) {
+//	for {
+//		time.Sleep(time.Minute)
+//		if telegram.GetAddress() {
+//			newAddr <- true
+//		}
+//	}
+//}
