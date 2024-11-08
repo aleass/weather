@@ -13,11 +13,15 @@ const (
 // 地址查询
 // 地址
 // 经纬度
-func CreatePhoto(loc []string, dis, radius7, radius10, radius12 float64) *bytes.Reader {
+func CreatePhoto(loc, forecasts []string, forecastsName [][2]string, dis, radius7, radius10, radius12 float64) *bytes.Reader {
 	//生产参数
 	//台风路径
 	paths := "2,0x0000FF,0.2,,:"
 	for _, l := range loc {
+		paths += l + ";"
+	}
+	//预测
+	for _, l := range forecasts {
 		paths += l + ";"
 	}
 	paths = paths[:len(paths)-1]
@@ -47,21 +51,25 @@ func CreatePhoto(loc []string, dis, radius7, radius10, radius12 float64) *bytes.
 	}
 	paths = paths[:len(paths)-1]
 
+	//预测名称
+	var labels string
+	for _, info := range forecastsName {
+		labels += fmt.Sprintf("%s,0,0,14,0x000000,0xffffff:%s|", info[0], info[1]) //日本,0,0,14,0x000000,0xffffff:118.713386,20.727620
+	}
+
 	var (
-		key = common.MyConfig.Atmp.Key
-		//labels  = fmt.Sprintf("人,,,,,:%s", common.MyConfig.Home.Loc)
-		//markers = fmt.Sprintf(",,:%s", loc[len(loc)-1])
-		location = loc[len(loc)-1]
+		key      = common.MyConfig.Atmp.Key
+		location = common.CalculateMidpoint(loc[len(loc)-1], common.MyConfig.Home.Loc)
 		size     = "1000*1000"
-		zoom     = 5
+		zoom     = zoomHandler(dis)
 	)
 
 	url := fmt.Sprintf(createPhotoUrl, paths, location, key, zoom, size)
 
-	//加标签
-	if radius7+radius10+radius12 == 0 {
-		var markers = fmt.Sprintf(",,:%s", loc[len(loc)-1])
-		url += "&markers=" + markers
+	//标签
+	if labels != "" {
+		labels = labels[:len(labels)-1]
+		url += "&labels=" + labels
 	}
 
 	//labels
@@ -84,7 +92,7 @@ func CreatePhoto(loc []string, dis, radius7, radius10, radius12 float64) *bytes.
 // 根据距离 计算缩放
 func zoomHandler(dis float64) int {
 	//1080 下 缩放
-	if dis <= 0 || dis > 900 {
+	if dis <= 0 || dis > 2000 {
 		return 4
 	}
 	return 5

@@ -95,7 +95,10 @@ qu:
 	msg += "【全市区降水检测点】\n" + rainIinfo
 
 ret:
-	return msg + "\n"
+	if msg != "" {
+		msg += "\n"
+	}
+	return msg
 }
 
 type rainInfo struct {

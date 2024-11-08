@@ -22,11 +22,14 @@ func updateAddr(w http.ResponseWriter, r *http.Request) {
 	// 接收参数
 	loc := r.FormValue("loc")
 	if loc == "" {
+		common.Logger.Error("null addr:" + loc)
 		return
 	}
 	if !common.CheckLoc(loc) {
+		common.Logger.Error("error addr:" + loc)
 		return
 	}
 	common.MyConfig.Home.Loc = loc
+	common.Logger.Warn("update addr" + loc)
 	NewAddr <- true
 }

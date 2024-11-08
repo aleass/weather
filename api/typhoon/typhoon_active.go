@@ -13,6 +13,7 @@ const (
 	typhoonActiveUrl = "https://typhoon.slt.zj.gov.cn/Api/TyhoonActivity"
 	temp             = `【台风】%s级%s-%s
      ● 风速：%sm/s，距离：%0.2fkm，风圈：%skm，%s
+
 `
 )
 
@@ -49,14 +50,14 @@ func TyphoonActive() string {
 		lastUpdate = v.Timeformate
 
 		//获取数据
-		loc, lastes := TyphoonPath(v.Tfid)
+		loc, forecasts, forecastsName, lastes := TyphoonPath(v.Tfid)
 		lastPoint = lastes
 		//获取级别
 		radius7 := radiusHanlder(lastes.Radius7)
 		message += fmt.Sprintf(temp, v.Power, v.Strong, v.Name, v.Speed, dis, radius7, lastes.Time[11:16])
 		radius12 := radiusHanlder(lastes.Radius12)
 		radius10 := radiusHanlder(lastes.Radius10)
-		resp := atmp.CreatePhoto(loc, dis, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
+		resp := atmp.CreatePhoto(loc, forecasts, forecastsName, dis, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
 		if resp == nil {
 			continue
 		}

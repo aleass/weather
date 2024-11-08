@@ -3,28 +3,49 @@ package typhoon
 import (
 	"fmt"
 	"services/common"
+	"time"
 )
 
 const (
 	typhoonPathUrl = "https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/"
 )
 
-func TyphoonPath(tyId string) ([]string, *PointsInfo) {
+func TyphoonPath(tyId string) ([]string, []string, [][2]string, *PointsInfo) {
 	var typhoonResp TyphoonResp
 	var url = typhoonPathUrl + tyId
 	_, err := common.HttpRequest(common.OtherType, common.GetType, url, nil, common.Header, false, &typhoonResp)
 	if err != nil {
 		common.Logger.Error(err.Error())
-		return nil, nil
+		return nil, nil, nil, nil
 	}
 	if len(typhoonResp.Points) == 0 {
-		return nil, nil
+		return nil, nil, nil, nil
 	}
 	var loctions []string
-	for _, s := range typhoonResp.Points {
+	var forecasts []string
+	var l = len(typhoonResp.Points) - 1
+	var forecastsName [][2]string
+	for i, s := range typhoonResp.Points {
 		loctions = append(loctions, fmt.Sprintf("%s,%s", s.Lng, s.Lat))
+		//预测路线
+		if i == l {
+			for _, forecast := range s.Forecast {
+				l = len(forecast.Forecastpoints)
+				if l == 0 {
+					continue
+				}
+				for _, points := range forecast.Forecastpoints {
+					forecasts = append(forecasts, fmt.Sprintf("%s,%s", points.Lng, points.Lat))
+				}
+				index := l - 1
+				forecastsName = append(forecastsName, [2]string{forecast.Forecastpoints[index].Tm, fmt.Sprintf("%s,%s", forecast.Forecastpoints[index].Lng, forecast.Forecastpoints[index].Lat)})
+				for ; index > 0; index-- {
+					forecasts = append(forecasts, fmt.Sprintf("%s,%s", forecast.Forecastpoints[index].Lng, forecast.Forecastpoints[index].Lat))
+				}
+			}
+		}
 	}
-	return loctions, &typhoonResp.Points[len(typhoonResp.Points)-1]
+	return loctions, forecasts, forecastsName, &typhoonResp.Points[len(typhoonResp.Points)-1]
 }
 
 type TyphoonResp struct {
@@ -53,20 +74,20 @@ type PointsInfo struct {
 	Radius7       string `json:"radius7"`
 	Radius10      string `json:"radius10"`
 	Radius12      string `json:"radius12"`
-	//Forecast      []struct {
-	//	Tm             string `json:"tm"`
-	//	Forecastpoints []struct {
-	//		Time     string    `json:"time"`
-	//		Lng      string    `json:"lng"`
-	//		Lat      string    `json:"lat"`
-	//		Strong   string    `json:"strong"`
-	//		Power    string    `json:"power"`
-	//		Speed    string    `json:"speed"`
-	//		Pressure string    `json:"pressure"`
-	//		Tm       string    `json:"tm,omitempty"`
-	//		Ybsj     time.Time `json:"ybsj,omitempty"`
-	//	} `json:"forecastpoints"`
-	//} `json:"forecast"`
+	Forecast      []struct {
+		Tm             string `json:"tm"`
+		Forecastpoints []struct {
+			Time     string    `json:"time"`
+			Lng      string    `json:"lng"`
+			Lat      string    `json:"lat"`
+			Strong   string    `json:"strong"`
+			Power    string    `json:"power"`
+			Speed    string    `json:"speed"`
+			Pressure string    `json:"pressure"`
+			Tm       string    `json:"tm,omitempty"`
+			Ybsj     time.Time `json:"ybsj,omitempty"`
+		} `json:"forecastpoints"`
+	} `json:"forecast"`
 	Ckposition *string `json:"ckposition"`
 	Jl         *string `json:"jl"`
 }
