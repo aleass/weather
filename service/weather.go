@@ -21,7 +21,7 @@ func RunWeather(sleepTimes time.Duration) {
 		lastUpdateHour int64
 		isNewAddr      bool
 	)
-	//go isNewAddress(newAddr)
+	go isNewAddress()
 
 	for {
 		var (
@@ -31,7 +31,9 @@ func RunWeather(sleepTimes time.Duration) {
 		)
 
 		//获取地址
-		telegram.GetAddress()
+		if !isNewAddr {
+			telegram.GetAddress()
+		}
 
 		//typhoon per hour
 		typhoonMsg := typhoon.TyphoonActive()
@@ -98,11 +100,11 @@ func RunWeather(sleepTimes time.Duration) {
 }
 
 // 定时检测新地址
-//func isNewAddress(newAddr chan bool) {
-//	for {
-//		time.Sleep(time.Minute)
-//		if telegram.GetAddress() {
-//			newAddr <- true
-//		}
-//	}
-//}
+func isNewAddress() {
+	for {
+		time.Sleep(time.Minute)
+		if telegram.GetAddress() {
+			NewAddr <- true
+		}
+	}
+}

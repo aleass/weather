@@ -10,26 +10,30 @@ const (
 	typhoonPathUrl = "https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/"
 )
 
-func TyphoonPath(tyId string) ([]string, []string, [][2]string, *PointsInfo) {
+func TyphoonPath(tyId string) ([]string, []string, [][2]string, [][2]string, *PointsInfo) {
 	var typhoonResp TyphoonResp
 	var url = typhoonPathUrl + tyId
 	_, err := common.HttpRequest(common.OtherType, common.GetType, url, nil, common.Header, false, &typhoonResp)
 	if err != nil {
 		common.Logger.Error(err.Error())
-		return nil, nil, nil, nil
+		return nil, nil, nil, nil, nil
 	}
 	if len(typhoonResp.Points) == 0 {
-		return nil, nil, nil, nil
+		return nil, nil, nil, nil, nil
 	}
-	var loctions []string
-	var forecasts []string
+	var (
+		loctions      []string
+		forecasts     []string
+		forecastsName [][2]string
+		forecastsDate [][2]string
+	)
+
 	var l = len(typhoonResp.Points) - 1
-	var forecastsName [][2]string
 	for i, s := range typhoonResp.Points {
 		loctions = append(loctions, fmt.Sprintf("%s,%s", s.Lng, s.Lat))
-		//预测路线
 		if i == l {
-			for _, forecast := range s.Forecast {
+			var max, maxLen int
+			for j, forecast := range s.Forecast {
 				l = len(forecast.Forecastpoints)
 				if l == 0 {
 					continue
@@ -37,15 +41,28 @@ func TyphoonPath(tyId string) ([]string, []string, [][2]string, *PointsInfo) {
 				for _, points := range forecast.Forecastpoints {
 					forecasts = append(forecasts, fmt.Sprintf("%s,%s", points.Lng, points.Lat))
 				}
+				if len(forecast.Forecastpoints) > max {
+					max = len(forecast.Forecastpoints)
+					maxLen = j
+				}
+
 				index := l - 1
 				forecastsName = append(forecastsName, [2]string{forecast.Forecastpoints[index].Tm, fmt.Sprintf("%s,%s", forecast.Forecastpoints[index].Lng, forecast.Forecastpoints[index].Lat)})
-				for ; index > 0; index-- {
+				for ; index >= 0; index-- {
 					forecasts = append(forecasts, fmt.Sprintf("%s,%s", forecast.Forecastpoints[index].Lng, forecast.Forecastpoints[index].Lat))
 				}
 			}
+
+			for j, points := range s.Forecast[maxLen].Forecastpoints[1:] {
+				if len(forecastsDate) == 9 && j != max-1 {
+					continue
+				}
+				forecastsDate = append(forecastsDate, [2]string{points.Time[8:13], fmt.Sprintf("%s,%s", points.Lng, points.Lat)})
+			}
+
 		}
 	}
-	return loctions, forecasts, forecastsName, &typhoonResp.Points[len(typhoonResp.Points)-1]
+	return loctions, forecasts, forecastsName, forecastsDate, &typhoonResp.Points[len(typhoonResp.Points)-1]
 }
 
 type TyphoonResp struct {

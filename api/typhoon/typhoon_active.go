@@ -5,21 +5,19 @@ import (
 	"services/api/atmp"
 	"services/api/telegram"
 	"services/common"
+	"sort"
 	"strings"
 	"time"
 )
 
-const (
+var (
 	typhoonActiveUrl = "https://typhoon.slt.zj.gov.cn/Api/TyhoonActivity"
-	temp             = `【台风】%s级%s-%s
-     ● 风速：%sm/s，距离：%0.2fkm，风圈：%skm，%s
-
-`
+	title            = "【台风】\n"
+	temp             = common.SubStr + "%s级%s:%s  风速:%sm/s  距离:%0.2fkm %s\n"
 )
 
 var (
-	lastUpdate string
-	lastPoint  = &PointsInfo{}
+	lastUpdate = map[string][2]string{}
 )
 
 // 有台风1小时 否则1天
@@ -30,9 +28,12 @@ func TyphoonActive() string {
 		common.Logger.Error(err.Error())
 		return ""
 	}
+	//置空
 	if len(typhoonActiveResp) == 0 {
+		lastUpdate = map[string][2]string{}
 		return ""
 	}
+
 	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Home.Loc)
 	var message string
 	for _, v := range typhoonActiveResp {
@@ -42,28 +43,31 @@ func TyphoonActive() string {
 		//	continue
 		//}
 
-		//如果数据没变化不更新
-		if v.Timeformate == lastUpdate {
-			message += fmt.Sprintf(temp, v.Power, v.Strong, v.Name, v.Speed, dis, radiusHanlder(lastPoint.Radius7), lastPoint.Time[11:16])
+		//如果数据没变化不更新图片
+		if v.Timeformate == lastUpdate[v.Name][0] { //11月9日18时
+			message += lastUpdate[v.Name][1]
 			continue
 		}
-		lastUpdate = v.Timeformate
 
 		//获取数据
-		loc, forecasts, forecastsName, lastes := TyphoonPath(v.Tfid)
-		lastPoint = lastes
+		loc, forecasts, forecastsName, forecastDate, lastes := TyphoonPath(v.Tfid)
+
+		//贫血信息
+		msg := fmt.Sprintf(temp, v.Power, v.Strong, v.Name, v.Speed, dis, lastes.Time[11:16])
+		message += msg
+		lastUpdate[v.Name] = [2]string{v.Timeformate, msg}
+
 		//获取级别
 		radius7 := radiusHanlder(lastes.Radius7)
-		message += fmt.Sprintf(temp, v.Power, v.Strong, v.Name, v.Speed, dis, radius7, lastes.Time[11:16])
 		radius12 := radiusHanlder(lastes.Radius12)
 		radius10 := radiusHanlder(lastes.Radius10)
-		resp := atmp.CreatePhoto(loc, forecasts, forecastsName, dis, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
+		resp := atmp.CreatePhoto(loc, forecasts, forecastsName, forecastDate, dis, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
 		if resp == nil {
 			continue
 		}
 		telegram.SendPhoto(resp, v.Name, "")
 	}
-	return message
+	return title + message + "\n"
 }
 
 func radiusHanlder(data string) string {
@@ -71,6 +75,7 @@ func radiusHanlder(data string) string {
 		return ""
 	}
 	parts := strings.Split(data, "|")
+	sort.Strings(parts)
 	return parts[len(parts)-1]
 }
 
