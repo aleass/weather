@@ -10,8 +10,8 @@ const (
 )
 
 // 地区 全名 是否广州内
-func WeatherInfo() string {
-	url := fmt.Sprintf(weatherUrl, common.MyConfig.Home.Loc, common.MyConfig.HeFeng.Key)
+func WeatherInfo(loc string) string {
+	url := fmt.Sprintf(weatherUrl, loc, common.MyConfig.HeFeng.Key)
 	var weatherResp WeatherResp
 	_, err := common.HttpRequest(common.WeatherType, common.GetType, url, nil, nil, false, &weatherResp)
 	if err != nil {

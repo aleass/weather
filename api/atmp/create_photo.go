@@ -14,11 +14,11 @@ const (
 // 地址查询
 // 地址
 // 经纬度
-func CreatePhoto(loc, forecasts []string, forecastsName, forecastsDate [][2]string, dis, radius7, radius10, radius12 float64) *bytes.Reader {
+func CreatePhoto(loc string, locArr, forecasts []string, forecastsName, forecastsDate [][2]string, dis, radius7, radius10, radius12 float64) *bytes.Reader {
 	//生产参数
 	//台风路径
 	paths := "2,0x0000FF,0.2,,:"
-	for _, l := range loc {
+	for _, l := range locArr {
 		paths += l + ";"
 	}
 	//预测
@@ -26,7 +26,7 @@ func CreatePhoto(loc, forecasts []string, forecastsName, forecastsDate [][2]stri
 		paths += l + ";"
 	}
 	paths = paths[:len(paths)-1]
-	l1, l2 := common.LocStr2float(loc[len(loc)-1])
+	l1, l2 := common.LocStr2float(locArr[len(locArr)-1])
 
 	//台风7级风圈
 	loc2 := common.CalculateCoordinates(l1, l2, radius7, 360)
@@ -64,7 +64,7 @@ func CreatePhoto(loc, forecasts []string, forecastsName, forecastsDate [][2]stri
 
 	var (
 		key      = common.MyConfig.Atmp.Key
-		location = common.CalculateMidpoint(loc[len(loc)-1], common.MyConfig.Home.Loc)
+		location = common.CalculateMidpoint(locArr[len(locArr)-1], loc)
 		size     = "1000*1000"
 		zoom     = zoomHandler(dis)
 	)
@@ -78,7 +78,7 @@ func CreatePhoto(loc, forecasts []string, forecastsName, forecastsDate [][2]stri
 	}
 
 	if radius7 == 0 && radius10 == 0 && radius12 == 0 {
-		url += fmt.Sprintf("&markers=small,0x000000,:%s", loc[len(loc)-1])
+		url += fmt.Sprintf("&markers=small,0x000000,:%s", locArr[len(locArr)-1])
 	}
 
 	resp, err := common.HttpRequest(common.MapType, common.GetType, url, nil, nil, false, nil)

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"services/api/sysos"
 	"services/common"
 	"time"
 )
@@ -10,9 +9,9 @@ import (
 func Run() {
 	defer common.RecoverWithStackTrace(RunWeather, 0)
 	//10000ms
-	go sysos.GetPowermetrics("600000")
-	go WebService()
+	//go sysos.GetPowermetrics("600000")
 	//go NewsRun(time.Minute * 30)
-	go RunWeather(time.Minute * 30)
+	go WebService()
+	go RunWeather(time.Minute * 1)
 	select {}
 }

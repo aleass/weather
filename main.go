@@ -1,6 +1,6 @@
 package main
 
-import "services/service"
+import "services/server"
 
 func main() {
 	service.Run()

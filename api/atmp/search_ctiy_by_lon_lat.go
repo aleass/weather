@@ -10,17 +10,14 @@ const (
 	searchByAddrUrl   = "https://restapi.amap.com/v3/geocode/geo?address=%s&key=%s"
 )
 
-// 地区 全名 是否广州内
+// 经纬度 市级 全名
 var used = [3]string{}
 
 // 搜搜地址
-func SearchAddrs() (string, string, bool) {
-	var (
-		loc  = common.MyConfig.Home.Loc
-		addr = common.MyConfig.Home.Addr
-	)
+// 经纬度  全名
+func SearchAddrs(addr, loc string) (string, string, bool) {
 	if used[0] == loc && addr == "" {
-		return used[1], used[2], true
+		return used[0], used[2], used[1] == "广州市"
 	}
 	if common.MyConfig.Home.Addr == "" {
 		return SearchByLonLac(loc)
@@ -45,11 +42,9 @@ func SearchByLonAddr(addr string) (string, string, bool) {
 	var content = resp.Geocodes[0]
 
 	common.MyConfig.Home.Addr = ""
-	common.MyConfig.Home.Loc = content.Location
-	var isOk = content.City == "广州市"
 	used[0] = content.Location
-	used[1], used[2] = content.District, content.FormattedAddress
-	return used[1], used[2], isOk
+	used[1], used[2] = content.City, content.FormattedAddress
+	return used[0], used[2], used[1] == "广州市"
 }
 
 func SearchByLonLac(loc string) (string, string, bool) {
@@ -61,10 +56,9 @@ func SearchByLonLac(loc string) (string, string, bool) {
 		common.Logger.Error(err.Error())
 		return "", "", false
 	}
-	var isOk = resp.Regeocode.AddressComponent.City == "广州市"
 	used[0] = loc
-	used[1], used[2] = resp.Regeocode.AddressComponent.District, resp.Regeocode.FormattedAddress
-	return used[1], used[2], isOk
+	used[1], used[2] = resp.Regeocode.AddressComponent.City, resp.Regeocode.FormattedAddress
+	return loc, used[2], used[1] == "广州市"
 }
 
 type SearchByLonLacResp struct {

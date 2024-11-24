@@ -15,8 +15,8 @@ var titleTemp = common.SubStr + `%s
 var nextTemp = common.SubStr + `%s  %s
 `
 
-func FiveMinRain() string {
-	url := fmt.Sprintf(realTimeRain, common.MyConfig.Home.Loc, common.MyConfig.HeFeng.Key)
+func FiveMinRain(loc string) string {
+	url := fmt.Sprintf(realTimeRain, loc, common.MyConfig.HeFeng.Key)
 	var fiveMinRainRes FiveMinRainRes
 	_, err := common.HttpRequest(common.WeatherType, common.GetType, url, nil, nil, false, &fiveMinRainRes)
 	if err != nil {

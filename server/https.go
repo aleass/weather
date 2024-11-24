@@ -27,7 +27,7 @@ func updateAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//地址
-	common.CheckAddrOrLoc(loc)
+	common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(loc)
 	if common.MyConfig.Home.Addr != "" {
 		goto end
 	}

@@ -3,11 +3,12 @@ package common
 import "strings"
 
 // 检查参数
-func CheckAddrOrLoc(data string) {
+func CheckAddrOrLoc(data string) (loc, addr string) {
 	if strings.Index(data, ".") != -1 {
-		MyConfig.Home.Loc = data
-		MyConfig.Home.Addr = ""
+		loc = data
+		addr = ""
 		return
 	}
-	MyConfig.Home.Addr = data
+	addr = data
+	return
 }

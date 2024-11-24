@@ -28,7 +28,7 @@ func GZWeather(district string) string {
 
 	// 编码成 URL 查询字符串
 	encoded := values.Encode()
-	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Home.Loc)
+	var lonSelf, latSelf = common.LocStr2float(district)
 
 	var (
 		msg         string

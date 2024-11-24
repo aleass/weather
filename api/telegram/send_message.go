@@ -53,7 +53,7 @@ func GetAddress() (ok bool) {
 	}
 
 	//填入数据
-	common.CheckAddrOrLoc(message.Message.Text)
+	common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(message.Message.Text)
 	messagedId = message.UpdateId
 	ok = true
 	return

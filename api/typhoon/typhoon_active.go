@@ -20,7 +20,7 @@ var (
 )
 
 // 有台风1小时 否则1天
-func TyphoonActive() string {
+func TyphoonActive(loc string) string {
 	var typhoonActiveResp []TyphoonActiveResp
 	_, err := common.HttpRequest(common.OtherType, common.GetType, typhoonActiveUrl, nil, common.Header, false, &typhoonActiveResp)
 	if err != nil {
@@ -33,7 +33,7 @@ func TyphoonActive() string {
 		return ""
 	}
 
-	var lonSelf, latSelf = common.LocStr2float(common.MyConfig.Home.Loc)
+	var lonSelf, latSelf = common.LocStr2float(loc)
 	var message string
 	for _, v := range typhoonActiveResp {
 		//计算距离，大于1000公里跳过
@@ -49,7 +49,7 @@ func TyphoonActive() string {
 		}
 
 		//获取数据
-		loc, forecasts, forecastsName, forecastDate, lastes := TyphoonPath(v.Tfid)
+		locArr, forecasts, forecastsName, forecastDate, lastes := TyphoonPath(v.Tfid)
 
 		//贫血信息
 		msg := fmt.Sprintf(temp, v.Power, v.Strong, v.Name, v.Speed, dis, lastes.Time[11:16])
@@ -60,7 +60,7 @@ func TyphoonActive() string {
 		radius7 := radiusHanlder(lastes.Radius7)
 		radius12 := radiusHanlder(lastes.Radius12)
 		radius10 := radiusHanlder(lastes.Radius10)
-		resp := atmp.CreatePhoto(loc, forecasts, forecastsName, forecastDate, dis, radius7, radius10, radius12)
+		resp := atmp.CreatePhoto(loc, locArr, forecasts, forecastsName, forecastDate, dis, radius7, radius10, radius12)
 		if resp == nil {
 			continue
 		}
