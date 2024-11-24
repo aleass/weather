@@ -25,7 +25,8 @@ type Config struct {
 	} `mapstructure:"atmp"`
 
 	Home struct {
-		Loc string `mapstructure:"loc"`
+		Loc  string `mapstructure:"loc"`
+		Addr string `mapstructure:"addr"`
 	} `mapstructure:"home"`
 
 	System struct {

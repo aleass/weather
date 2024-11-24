@@ -7,16 +7,52 @@ import (
 
 const (
 	searchByLonLacUrl = "https://restapi.amap.com/v3/geocode/regeo?location=%s&key=%s"
+	searchByAddrUrl   = "https://restapi.amap.com/v3/geocode/geo?address=%s&key=%s"
 )
 
 // 地区 全名 是否广州内
 var used = [3]string{}
 
-func SearchByLonLac(loc string) (string, string, bool) {
-	if used[0] == loc {
+// 搜搜地址
+func SearchAddrs() (string, string, bool) {
+	var (
+		loc  = common.MyConfig.Home.Loc
+		addr = common.MyConfig.Home.Addr
+	)
+	if used[0] == loc && addr == "" {
 		return used[1], used[2], true
 	}
+	if common.MyConfig.Home.Addr == "" {
+		return SearchByLonLac(loc)
+	}
+	return SearchByLonAddr(addr)
+}
 
+// 搜索经纬度
+func SearchByLonAddr(addr string) (string, string, bool) {
+	key := common.MyConfig.Atmp.Key
+	url := fmt.Sprintf(searchByAddrUrl, addr, key)
+	var resp SearchByAddrResp
+	_, err := common.HttpRequest(common.MapType, common.GetType, url, nil, nil, false, &resp)
+	if err != nil {
+		common.Logger.Error(err.Error())
+		return "", "", false
+	}
+	if len(resp.Geocodes) == 0 {
+		common.Logger.Error(addr)
+		return "", "", false
+	}
+	var content = resp.Geocodes[0]
+
+	common.MyConfig.Home.Addr = ""
+	common.MyConfig.Home.Loc = content.Location
+	var isOk = content.City == "广州市"
+	used[0] = content.Location
+	used[1], used[2] = content.District, content.FormattedAddress
+	return used[1], used[2], isOk
+}
+
+func SearchByLonLac(loc string) (string, string, bool) {
 	key := common.MyConfig.Atmp.Key
 	url := fmt.Sprintf(searchByLonLacUrl, loc, key)
 	var resp SearchByLonLacResp
@@ -68,4 +104,32 @@ type SearchByLonLacResp struct {
 	} `json:"regeocode"`
 	Info     string `json:"info"`
 	Infocode string `json:"infocode"`
+}
+type SearchByAddrResp struct {
+	Status   string `json:"status"`
+	Info     string `json:"info"`
+	Infocode string `json:"infocode"`
+	Count    string `json:"count"`
+	Geocodes []struct {
+		FormattedAddress string `json:"formatted_address"`
+		Country          string `json:"country"`
+		Province         string `json:"province"`
+		Citycode         string `json:"citycode"`
+		City             string `json:"city"`
+		District         string `json:"district"`
+		//Township         []interface{} `json:"township"`
+		//Neighborhood     struct {
+		//	Name []interface{} `json:"name"`
+		//	Type []interface{} `json:"type"`
+		//} `json:"neighborhood"`
+		//Building struct {
+		//	Name []interface{} `json:"name"`
+		//	Type []interface{} `json:"type"`
+		//} `json:"building"`
+		Adcode string `json:"adcode"`
+		//Street   []interface{} `json:"street"`
+		//Number   []interface{} `json:"number"`
+		Location string `json:"location"`
+		Level    string `json:"level"`
+	} `json:"geocodes"`
 }

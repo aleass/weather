@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// 记录错误信息和调用
 func RecoverWithStackTrace(funcName func(duration time.Duration), duration time.Duration) {
 	if r := recover(); r != nil {
 		Logger.Error(fmt.Sprintf("退出了,发现错误recover : %v", r))
@@ -18,10 +19,17 @@ func RecoverWithStackTrace(funcName func(duration time.Duration), duration time.
 		stack := make([]byte, 4096)
 		stack = stack[:runtime.Stack(stack, false)]
 		Logger.Error(fmt.Sprintf("Stack trace:\n%s", stack))
-		if duration == 0 {
-			panic("exit:0")
+
+		//至少睡眠30s
+		if duration < 30*time.Second {
+			duration = 30 * time.Second
 		}
-		time.Sleep(time.Minute * 5)
+
+		time.Sleep(duration)
+
+		if funcName == nil {
+			return
+		}
 		funcName(duration)
 	}
 }

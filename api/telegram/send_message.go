@@ -48,11 +48,12 @@ func GetAddress() (ok bool) {
 	}
 
 	message := resp.Result[l-1]
-	if messagedId == message.UpdateId || time.Now().Unix()-message.Message.Date > 5*60 {
+	if messagedId == message.UpdateId || time.Now().Unix()-message.Message.Date > 15*60 {
 		return
 	}
 
-	common.MyConfig.Home.Loc = message.Message.Text
+	//填入数据
+	common.CheckAddrOrLoc(message.Message.Text)
 	messagedId = message.UpdateId
 	ok = true
 	return

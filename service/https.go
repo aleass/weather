@@ -25,11 +25,21 @@ func updateAddr(w http.ResponseWriter, r *http.Request) {
 		common.Logger.Error("null addr:" + loc)
 		return
 	}
+
+	//地址
+	common.CheckAddrOrLoc(loc)
+	if common.MyConfig.Home.Addr != "" {
+		goto end
+	}
+
+	//经纬度
 	if !common.CheckLoc(loc) {
 		common.Logger.Error("error addr:" + loc)
 		return
 	}
 	common.MyConfig.Home.Loc = loc
+
+end:
 	common.Logger.Warn("update addr" + loc)
 	NewAddr <- true
 }

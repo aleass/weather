@@ -5,7 +5,6 @@ import (
 	"services/api/atmp"
 	"services/api/telegram"
 	"services/common"
-	"sort"
 	"strings"
 	"time"
 )
@@ -61,7 +60,7 @@ func TyphoonActive() string {
 		radius7 := radiusHanlder(lastes.Radius7)
 		radius12 := radiusHanlder(lastes.Radius12)
 		radius10 := radiusHanlder(lastes.Radius10)
-		resp := atmp.CreatePhoto(loc, forecasts, forecastsName, forecastDate, dis, common.Str2Float64(radius7), common.Str2Float64(radius10), common.Str2Float64(radius12))
+		resp := atmp.CreatePhoto(loc, forecasts, forecastsName, forecastDate, dis, radius7, radius10, radius12)
 		if resp == nil {
 			continue
 		}
@@ -70,13 +69,19 @@ func TyphoonActive() string {
 	return title + message + "\n"
 }
 
-func radiusHanlder(data string) string {
+func radiusHanlder(data string) float64 {
 	if data == "" {
-		return ""
+		return 0
 	}
 	parts := strings.Split(data, "|")
-	sort.Strings(parts)
-	return parts[len(parts)-1]
+	var max float64
+	for _, part := range parts {
+		var dis = common.Str2Float64(part)
+		if dis > max {
+			max = dis
+		}
+	}
+	return max
 }
 
 type TyphoonActiveResp struct {
