@@ -75,7 +75,7 @@ func GetNews() {
 	}
 
 	for i := len(msgList) - 1; i >= 0; i-- {
-		telegram.SendMessage(msgList[i], common.MyConfig.Telegram.Token2)
+		telegram.SendMessage(msgList[i], common.MyConfig.Telegram.NewToken)
 	}
 	return
 }

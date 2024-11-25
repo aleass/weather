@@ -29,6 +29,11 @@ type Config struct {
 		Addr string `mapstructure:"addr"`
 	} `mapstructure:"home"`
 
+	TemHome struct {
+		Loc  string `mapstructure:"loc"`
+		Addr string `mapstructure:"addr"`
+	} `mapstructure:"home"`
+
 	System struct {
 		RootPath   string `mapstructure:"root_path"`
 		IsProxy    bool   `mapstructure:"is_proxy"`
@@ -36,10 +41,10 @@ type Config struct {
 	} `mapstructure:"system"`
 
 	Telegram struct {
-		Token       string `mapstructure:"token"`
-		Token2      string `mapstructure:"token2"`
-		AddresToken string `mapstructure:"addres_token"`
-		ChatId      int64  `mapstructure:"chat_id"`
+		WeatherToken string `mapstructure:"weather_token"`
+		NewToken     string `mapstructure:"new_token"`
+		AddresToken  string `mapstructure:"addres_token"`
+		ChatId       int64  `mapstructure:"chat_id"`
 	} `mapstructure:"telegram"`
 }
 

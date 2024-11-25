@@ -19,7 +19,7 @@ func SearchAddrs(addr, loc string) (string, string, bool) {
 	if used[0] == loc && addr == "" {
 		return used[0], used[2], used[1] == "广州市"
 	}
-	if common.MyConfig.Home.Addr == "" {
+	if addr == "" {
 		return SearchByLonLac(loc)
 	}
 	return SearchByLonAddr(addr)

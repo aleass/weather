@@ -20,26 +20,23 @@ func updateAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 接收参数
-	loc := r.FormValue("loc")
-	if loc == "" {
-		common.Logger.Error("null addr:" + loc)
+	text := r.FormValue("addr")
+	if text == "" {
+		common.Logger.Error("null addr:" + text)
 		return
 	}
 
 	//地址
-	common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(loc)
-	if common.MyConfig.Home.Addr != "" {
-		goto end
+	//检查是否临时
+	//填入数据
+	if text[0] == '-' {
+		common.MyConfig.TemHome.Loc, common.MyConfig.TemHome.Addr = common.CheckAddrOrLoc(text[1:])
+		//isTem = true
+		NewTempAddr <- true
+	} else {
+		common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(text)
+		NewAddr <- true
 	}
 
-	//经纬度
-	if !common.CheckLoc(loc) {
-		common.Logger.Error("error addr:" + loc)
-		return
-	}
-	common.MyConfig.Home.Loc = loc
-
-end:
-	common.Logger.Warn("update addr" + loc)
-	NewAddr <- true
+	common.Logger.Warn("update addr" + text)
 }

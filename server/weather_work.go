@@ -21,8 +21,8 @@ type Weather struct {
 	IsNewAddr      bool
 }
 
-func NewWeather(loc *string) *Weather {
-	var obj = &Weather{Loc: loc}
+func NewWeather(loc, addr *string) *Weather {
+	var obj = &Weather{Loc: loc, Addr: addr}
 	if loc == nil {
 		obj.Loc = &common.MyConfig.Home.Loc
 		obj.Addr = &common.MyConfig.Home.Addr
@@ -76,7 +76,7 @@ func (w *Weather) GetWeatcherInfo() {
 	if sendMsg != "" {
 		w.LastUpdateUnix = now.Unix()
 		sendMsg += addr + now.Format(" 15:04 ") + sysos.OSPower
-		telegram.SendMessage(sendMsg, common.MyConfig.Telegram.Token)
+		telegram.SendMessage(sendMsg, common.MyConfig.Telegram.WeatherToken)
 		common.Logger.Info(sendMsg)
 	}
 

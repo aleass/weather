@@ -7,7 +7,7 @@ import (
 )
 
 func SendPhoto(file io.Reader, name string, messageId string) {
-	url := fmt.Sprintf(pullUrl+"sendPhoto", common.MyConfig.Telegram.Token)
+	url := fmt.Sprintf(pullUrl+"sendPhoto", common.MyConfig.Telegram.WeatherToken)
 	formInfo := [][2]string{
 		{"chat_id", common.Int642Str(common.MyConfig.Telegram.ChatId)},
 		{"caption", name},

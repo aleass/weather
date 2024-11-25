@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"services/api/atmp"
+	"services/api/telegram"
 	"services/api/typhoon"
 	"services/common"
 	"strings"
@@ -15,18 +15,13 @@ type st struct {
 }
 
 func TestSendText(t *testing.T) {
-	var s = make(map[int]int)
-	var tt = st{
-		1,
-	}
-	s[9] = tt.id
-	delete(s, 9)
+	telegram.GetMessage()
 	return
-	loc, forecasts, forecastsName, forecastsDate, lastes := TyphoonPath("")
-	radius7 := radiusHanlder(lastes.Radius7)
-	radius12 := radiusHanlder(lastes.Radius12)
-	radius10 := radiusHanlder(lastes.Radius10)
-	atmp.CreatePhoto(loc, forecasts, forecastsName, forecastsDate, 1000, radius7, radius10, radius12)
+	//loc, forecasts, forecastsName, forecastsDate, lastes := TyphoonPath("")
+	//radius7 := radiusHanlder(lastes.Radius7)
+	//radius12 := radiusHanlder(lastes.Radius12)
+	//radius10 := radiusHanlder(lastes.Radius10)
+	//atmp.CreatePhoto(loc, forecasts, forecastsName, forecastsDate, 1000, radius7, radius10, radius12)
 }
 
 func radiusHanlder(data string) float64 {
