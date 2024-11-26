@@ -7,7 +7,7 @@ import (
 )
 
 var NewAddr = make(chan bool, 1)
-var NewTempAddr = make(chan bool, 1)
+var NewTempAddr = make(chan string, 10)
 
 func RunWeather(sleepTimes time.Duration) {
 	defer common.RecoverWithStackTrace(RunWeather, sleepTimes)
@@ -17,12 +17,11 @@ func RunWeather(sleepTimes time.Duration) {
 
 	go isNewAddress()
 	go TemWeather()
-
 	for {
 		var now = time.Now()
 		//获取地址
 		if !weather.IsNewAddr {
-			telegram.GetMessage()
+			telegram.GetMessage(NewTempAddr)
 		}
 
 		weather.GetWeatcherInfo()
@@ -33,7 +32,7 @@ func RunWeather(sleepTimes time.Duration) {
 		var h = now.Hour()
 		switch {
 		case h < 6:
-			//curSleepTime = time.After(sleepTimes * 2)
+			curSleepTime = time.After(sleepTimes * 2)
 		}
 
 		select {
@@ -49,13 +48,9 @@ func RunWeather(sleepTimes time.Duration) {
 // 定时检测新地址
 func isNewAddress() {
 	for {
-		time.Sleep(5 * time.Minute)
-		if ok, isTem := telegram.GetMessage(); ok {
-			if isTem {
-				NewTempAddr <- true
-			} else {
-				NewAddr <- true
-			}
+		time.Sleep(5 * time.Second)
+		if ok := telegram.GetMessage(NewTempAddr); ok {
+			NewAddr <- true
 		}
 	}
 }

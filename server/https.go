@@ -30,9 +30,8 @@ func updateAddr(w http.ResponseWriter, r *http.Request) {
 	//检查是否临时
 	//填入数据
 	if text[0] == '-' {
-		common.MyConfig.TemHome.Loc, common.MyConfig.TemHome.Addr = common.CheckAddrOrLoc(text[1:])
 		//isTem = true
-		NewTempAddr <- true
+		NewTempAddr <- text[1:]
 	} else {
 		common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(text)
 		NewAddr <- true

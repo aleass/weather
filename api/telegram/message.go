@@ -33,7 +33,7 @@ func SendMessage(info, token string) int64 {
 var messagedId = 0
 
 // 接受信息
-func GetMessage() (ok, isTem bool) {
+func GetMessage(acceptChan chan string) (ok bool) {
 	url := fmt.Sprintf(pullUrl+"getUpdates", common.MyConfig.Telegram.WeatherToken)
 	var msg = Msg{
 		Offset: messagedId,
@@ -49,22 +49,21 @@ func GetMessage() (ok, isTem bool) {
 		return
 	}
 
-	message := resp.Result[l-1]
-	if messagedId == message.UpdateId || time.Now().Unix()-message.Message.Date > 15*60 || message.Message.Text == "" {
-		return
+	for _, message := range resp.Result {
+		if messagedId >= message.UpdateId || time.Now().Unix()-message.Message.Date > 5*60+1 || message.Message.Text == "" {
+			continue
+		}
+		//检查是否临时
+		var text = message.Message.Text
+		//填入数据
+		if text[0] == '-' {
+			acceptChan <- text[1:]
+		} else {
+			common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(text)
+			ok = true
+		}
+		messagedId = message.UpdateId
 	}
 
-	//检查是否临时
-	var text = message.Message.Text
-	//填入数据
-	if text[0] == '-' {
-		common.MyConfig.TemHome.Loc, common.MyConfig.TemHome.Addr = common.CheckAddrOrLoc(text[1:])
-		isTem = true
-	} else {
-		common.MyConfig.Home.Loc, common.MyConfig.Home.Addr = common.CheckAddrOrLoc(text)
-	}
-
-	messagedId = message.UpdateId
-	ok = true
 	return
 }

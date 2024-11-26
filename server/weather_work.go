@@ -23,7 +23,8 @@ type Weather struct {
 
 func NewWeather(loc, addr *string) *Weather {
 	var obj = &Weather{Loc: loc, Addr: addr}
-	if loc == nil {
+
+	if loc == nil && addr == nil {
 		obj.Loc = &common.MyConfig.Home.Loc
 		obj.Addr = &common.MyConfig.Home.Addr
 	}
@@ -37,16 +38,15 @@ func (w *Weather) GetWeatcherInfo() {
 		weather string
 		addr    string
 	)
+	//获取位置
+	//loc, addr, isGz := he_feng.Lookup()
+	loc, addr, ok := atmp.SearchAddrs(*w.Addr, *w.Loc)
 
+	*w.Loc = loc
 	//typhoon per hour
 	typhoonMsg := typhoon.TyphoonActive(*w.Loc)
 	//获取天气 5分钟降雨
 	var rainInfo = he_feng.FiveMinRain(*w.Loc)
-
-	//获取位置
-	//loc, addr, ok := he_feng.Lookup()
-	loc, addr, ok := atmp.SearchAddrs(*w.Addr, *w.Loc)
-	*w.Loc = loc
 
 	//获取实时降雨量测试点
 	var realData string

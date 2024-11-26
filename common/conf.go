@@ -29,11 +29,6 @@ type Config struct {
 		Addr string `mapstructure:"addr"`
 	} `mapstructure:"home"`
 
-	TemHome struct {
-		Loc  string `mapstructure:"loc"`
-		Addr string `mapstructure:"addr"`
-	} `mapstructure:"home"`
-
 	System struct {
 		RootPath   string `mapstructure:"root_path"`
 		IsProxy    bool   `mapstructure:"is_proxy"`

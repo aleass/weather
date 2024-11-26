@@ -14,14 +14,15 @@ const (
 var used = [3]string{}
 
 // 搜搜地址
-// 经纬度  全名
+// 经纬度  全名 是否广州 是否有效
 func SearchAddrs(addr, loc string) (string, string, bool) {
-	if used[0] == loc && addr == "" {
-		return used[0], used[2], used[1] == "广州市"
-	}
 	if addr == "" {
+		if used[0] == loc {
+			return used[0], used[2], used[1] == "广州市"
+		}
 		return SearchByLonLac(loc)
 	}
+
 	return SearchByLonAddr(addr)
 }
 

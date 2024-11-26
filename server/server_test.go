@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"services/api/telegram"
 	"services/api/typhoon"
 	"services/common"
 	"strings"
@@ -15,8 +14,6 @@ type st struct {
 }
 
 func TestSendText(t *testing.T) {
-	telegram.GetMessage()
-	return
 	//loc, forecasts, forecastsName, forecastsDate, lastes := TyphoonPath("")
 	//radius7 := radiusHanlder(lastes.Radius7)
 	//radius12 := radiusHanlder(lastes.Radius12)
